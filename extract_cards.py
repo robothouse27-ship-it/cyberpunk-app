@@ -15,7 +15,11 @@ Outputs to out/p<page>/:
   card_<R><C>_acts.png   action limiter + armor, high zoom (15x)
 plus an index.txt mapping grid cells to the names from the text layer.
 """
-import sys, os, fitz
+import os
+import sys
+
+import fitz
+
 
 def card_rects(pg):
     """Return card image rects sorted into grid order (row-major, top-to-bottom,
@@ -53,19 +57,22 @@ def main():
         for ci, r in enumerate(cards, 1):
             cell = f"{row_letters[ri]}{ci}"
             clip = fitz.Rect(r.x0-pad, r.y0-pad, r.x1+pad, r.y1+pad)
-            pg.get_pixmap(matrix=fitz.Matrix(zoom, zoom), clip=clip).save(f"{outdir}/card_{cell}.png")
+            pg.get_pixmap(matrix=fitz.Matrix(zoom, zoom), clip=clip).save(
+                f"{outdir}/card_{cell}.png")
             # skills column (right ~30%, top ~55%)
             sk = fitz.Rect(r.x0+72, r.y0+2, r.x1+2, r.y0+78)
-            pg.get_pixmap(matrix=fitz.Matrix(18, 18), clip=sk).save(f"{outdir}/card_{cell}_skills.png")
+            pg.get_pixmap(matrix=fitz.Matrix(18, 18), clip=sk).save(
+                f"{outdir}/card_{cell}_skills.png")
             # action limiter + armor (left strip)
             ac = fitz.Rect(r.x0-1, r.y0+2, r.x0+24, r.y0+118)
-            pg.get_pixmap(matrix=fitz.Matrix(15, 15), clip=ac).save(f"{outdir}/card_{cell}_acts.png")
+            pg.get_pixmap(matrix=fitz.Matrix(15, 15), clip=ac).save(
+                f"{outdir}/card_{cell}_acts.png")
             index.append(f"{cell}\tx={r.x0:.0f},y={r.y0:.0f}")
     # dump text-layer names for cross-reference
-    names = [l for l in pg.get_text().splitlines()
-             if l.strip() and l.strip() not in row_letters
-             and not l.strip().isdigit()
-             and all(k not in l for k in ("Release", "Errata", "BETA", "CHARACTERS"))]
+    names = [ln for ln in pg.get_text().splitlines()
+             if ln.strip() and ln.strip() not in row_letters
+             and not ln.strip().isdigit()
+             and all(k not in ln for k in ("Release", "Errata", "BETA", "CHARACTERS"))]
     with open(f"{outdir}/index.txt", "w") as f:
         f.write("GRID CELLS:\n" + "\n".join(index))
         f.write("\n\nTEXT-LAYER NAMES (in reading order):\n" + "\n".join(names))

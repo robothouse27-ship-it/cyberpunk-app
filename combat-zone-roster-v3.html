@@ -755,7 +755,7 @@ function renderRoster() {
     `).join('');
 
     const skillsStr = Object.entries(m.skills||{})
-      .filter(([k,v]) => v > 0)
+      .filter(([, v]) => v > 0)
       .map(([k,v]) => `${k.slice(0,3)} ${v}`)
       .join(' • ') || 'no skills';
 
@@ -1252,14 +1252,14 @@ function init() {
 }
 
 function saveState() {
-  try { localStorage.setItem('cz_roster_v3', JSON.stringify(state)); } catch(e){}
+  try { localStorage.setItem('cz_roster_v3', JSON.stringify(state)); } catch { /* storage unavailable */ }
 }
 
 function loadState() {
   try {
     const raw = localStorage.getItem('cz_roster_v3');
     if (raw) Object.assign(state, JSON.parse(raw));
-  } catch(e){}
+  } catch { /* corrupt or unavailable storage */ }
 }
 
 function exportRoster() {
