@@ -1110,7 +1110,7 @@ function renderLibrary() {
       const id = el.dataset.id;
       const cat = el.dataset.cat;
       if (cat === 'char') addModel(id);
-      else if (cat === 'gear') addGearToLast(id);
+      else if (cat === 'gear') addGear(id);
       else if (cat === 'vehicle') addVehicle(id);
       // prog click is informational only for now
     });
@@ -1135,11 +1135,7 @@ function wireKeywordChips(container) {
   });
 }
 
-function addGearToLast(gearId) {
-  if (state.models.length === 0) {
-    alert('Add a character first.');
-    return;
-  }
+function addGear(gearId) {
   // Search all faction gear lists + universal for the matching gear
   const allGear = [];
   for (const f in (DATA.gear || {})) {
@@ -1147,11 +1143,61 @@ function addGearToLast(gearId) {
   }
   const g = allGear.find(x => x.id === gearId);
   if (!g) return;
-  const last = state.models[state.models.length - 1];
-  last.gear = last.gear || [];
-  last.gear.push({ id: g.id, name: g.name, cost: g.cost||0 });
+
+  // Gear can only be carried by characters/gonks, not vehicles.
+  const targets = state.models.filter(m => !m.isVehicle);
+  if (targets.length === 0) {
+    alert('Add a character first.');
+    return;
+  }
+  // Single eligible model: skip the picker.
+  if (targets.length === 1) {
+    giveGearTo(targets[0].uid, g);
+    return;
+  }
+  openGearTargetPicker(g, targets);
+}
+
+function giveGearTo(uid, g) {
+  const m = state.models.find(x => x.uid === uid);
+  if (!m) return;
+  m.gear = m.gear || [];
+  m.gear.push({ id: g.id, name: g.name, cost: g.cost||0 });
   render();
   saveState();
+}
+
+// Pop a picker asking which model the gear should go to.
+function openGearTargetPicker(g, targets) {
+  const modal = document.createElement('div');
+  modal.className = 'modal-bg';
+  const rows = targets.map(m => `
+    <button class="big-btn secondary gear-target" data-uid="${m.uid}"
+      style="display:flex; justify-content:space-between; align-items:center; gap:8px; width:100%; margin-bottom:6px; text-align:left;">
+      <span style="font-weight:bold;">${escHtml(m.name)}${m.isGonk ? ' <span style="color:var(--neon-pink);font-size:9px;">GONK</span>' : ''}</span>
+      <span style="font-size:10px; opacity:0.7;">${(m.gear||[]).length} gear</span>
+    </button>`).join('');
+  modal.innerHTML = `
+    <div class="modal sc-modal">
+      <div class="sc-modal-head">
+        <div>
+          <h3 style="margin-bottom:2px;">ADD TO WHICH MODEL?</h3>
+          <div class="scenario-card-meta">${escHtml(g.name)} • ${g.cost||0} EB</div>
+        </div>
+        <button class="mini-btn" id="gt-close" style="color:var(--neon-red);border-color:var(--neon-red);">✕</button>
+      </div>
+      <div style="margin-top:10px;">${rows}</div>
+    </div>`;
+  document.getElementById('modal-host').appendChild(modal);
+  const close = () => modal.remove();
+  modal.addEventListener('click', e => { if (e.target === modal) close(); });
+  modal.querySelector('#gt-close').onclick = close;
+  modal.querySelectorAll('.gear-target').forEach(btn => {
+    btn.addEventListener('click', () => {
+      giveGearTo(btn.dataset.uid, g);
+      close();
+    });
+  });
 }
 
 // ===== MODEL MANAGEMENT =====
