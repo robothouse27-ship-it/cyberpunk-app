@@ -3,3 +3,6 @@ node_modules/
 *.pyc
 __pycache__/
 .DS_Store
+
+# Source rulebook PDFs (copyrighted — keep out of the repo)
+*.pdf
