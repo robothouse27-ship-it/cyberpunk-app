@@ -450,6 +450,23 @@ header {
   padding-bottom: 3px; border-bottom: 1px solid var(--border);
 }
 .sc-section-body { font-size: 13px; line-height: 1.5; color: var(--text); }
+/* Vehicle-rules glossary + tappable keyword chips */
+.kw-chip {
+  display: inline-block; cursor: pointer;
+  border: 1px solid var(--neon-cyan); color: var(--neon-cyan);
+  border-radius: 3px; padding: 0 4px; margin: 0 2px 2px 0; line-height: 1.4;
+}
+.kw-chip:hover { background: var(--neon-cyan); color: #000; }
+.vr-kw { margin-bottom: 10px; }
+.vr-kw-name {
+  display: block; font-family: 'Share Tech Mono', monospace; font-size: 11px;
+  letter-spacing: 1px; color: var(--neon-yellow); text-transform: uppercase; margin-bottom: 2px;
+}
+.vr-kw.vr-flash { animation: vrFlash 1.4s ease-out; }
+@keyframes vrFlash {
+  0% { background: rgba(5,217,232,0.45); }
+  100% { background: transparent; }
+}
 .sc-special {
   background: var(--bg-deep); border: 1px solid var(--border);
   border-left: 3px solid var(--neon-yellow);
@@ -540,6 +557,7 @@ header {
           <span id="scenarios-title" style="display:none; color:var(--neon-purple);">SCENARIO DATABASE</span>
           <span id="play-status" style="display:none;">
             <button class="mini-btn" id="btn-inspire" style="color: var(--neon-pink); border-color: var(--neon-pink);">⚡ INSPIRE</button>
+            <button class="mini-btn" id="btn-vrules" style="color: var(--neon-cyan); border-color: var(--neon-cyan);">📖 VEHICLE RULES</button>
           </span>
         </div>
         <div id="roster-area">
@@ -740,6 +758,91 @@ function openScenario(i) {
   modal.querySelector('#sc-close2').onclick = close;
 }
 
+// ===== VEHICLE RULES REFERENCE (Omnibus pp.44-51) =====
+const VEHICLE_RULES = {
+  sections: [
+    { title: 'VEHICLE BASICS', body: 'A Vehicle is a special model that requires a Driver. Vehicles never activate or take actions on their own, and are not Characters. Unlike Characters, a Vehicle has a facing — the front of the model. Vehicles have no faction and can be taken by any team. They cannot equip Gear; they use Mods instead. A Vehicle may not be targeted by Influence actions, given free actions by effects that don\'t name Vehicles, or targeted by Command effects.' },
+    { title: 'BUYING & MODS', body: 'Pay the Vehicle\'s EB cost from your team budget. Mods attach to Mod slots; a Mod with a slot keyword (Pintle, Turret, Sidecar) must go in a matching slot, and only one Mod per keyword slot. Pintle and Turret slots are linked to a seat — their actions may only be used by a Passenger in that seat. Some Mods note a Vehicle type (Car, Cycle, Aerodyne) and only fit that type.' },
+    { title: 'PILOTING — STEER', body: 'The Driver takes the STEER action (Basic Reflexes) to move the Vehicle. Vehicles always move GREEN regardless of the Steer color. The color sets rotation timing (≤180°): GREEN = rotate before AND after the move; YELLOW = before OR after; RED = after only. Movement is measured from the front of the model; rotation pivots from its center. Obstacles taller than reach count as barriers. BACKING UP: move directly backward RED instead of GREEN (rotation still per color).' },
+    { title: 'PASSENGERS', body: 'The Driver also counts as a Passenger. EMBARK: end a move within reach of a Vehicle to take an empty seat. DISEMBARK: on a move action, place in base contact then move. EVERYONE OUT!: at the end of the Driver\'s activation all may disembark (no move). SWITCH SEATS: an Easy Reflexes action to an empty seat. GUNNERS fire a linked Mod slot\'s weapons only if they begin their activation in that gunner seat. Passenger actions draw Path of Attack from anywhere on the Vehicle\'s base.' },
+    { title: 'DAMAGE & HULL TOKENS', body: 'Hull tokens are special Action tokens used only to resist attacks and track damage — they can\'t be spent on actions. A Passenger may defend using the Vehicle\'s Armor. A Vehicle is taken out when it resists an attack with a RED Hull token and fails; all embarked models are then placed in contact before it is removed. Vehicles are healed only by the Repair keyword, not Heal. Vehicles are never part of a Brawl. BLAST/TORRENT can\'t target embarked models — they hit the Vehicle; if it\'s taken out, each embarked model suffers 1 wound.' },
+    { title: 'RAMMING & HOLDIN\' ON', body: 'When a Vehicle\'s move or rotation contacts a model, it rams: 1 wound (2 if the Vehicle is Heavy). Characters may [RE]act to a ram; Gonks and Vehicles cannot. Ramming a Vehicle or barrier stops the rammer, deals it 1 damage, and cancels its end rotation. HOLDIN\' ON: models may end movement atop a non-Bike Vehicle; if it then moves, each model atop rolls Reflexes vs the Obstacle die or their rival decides where they land.' },
+    { title: 'AERODYNES', body: 'Aerodynes hover and operate at two altitudes. BATTLE: after a Steer, set hover height RED/YELLOW/GREEN (not below the terrain they\'re over). They ignore obstacles/barriers GREEN or lower when moving, climb up to GREEN without a roll, take no falling damage, and may move in any direction. OVERWATCH: placed off-board at an edge; only roofed/enclosed buildings block attacks; only Long range actions reach to or from it; if taken out, all Passengers are taken out and none may disembark. CHANGING ALTITUDE: a Steer raises or lowers one step (no other movement).' },
+  ],
+  keywords: {
+    'Cycle': 'A small two-wheeled Vehicle. Its Driver may bend the Limiter when moving instead of rotating — moving forward along the curved path, making Reflexes checks for obstacles.',
+    'Car': 'A standard ground Vehicle (no special movement keyword).',
+    'Aerodyne': 'A hovering Vehicle that operates at Battle or Overwatch altitude. See the AERODYNES section.',
+    'Enclosed': 'Models inside cannot target or be targeted by models outside the Vehicle. They may still attack using Vehicle-mounted Mods.',
+    'Heavy': 'When this Vehicle rams another model, the rammed model suffers 2 wounds instead of 1.',
+    'Wheelman': 'An expert Driver. May move any Vehicle as if it were a Cycle. While Driving, may add their own Reflexes skill when opposing Ranged attacks instead of the Vehicle\'s Armor.',
+    'Refit': 'A Mod that takes up space: when equipped it also fills a non-Driver Passenger seat, chosen when you buy it.',
+    'Repair': 'Functions as the Heal keyword but only affects Vehicles, Robots, and Drones. Each damage repaired restores one RED Hull token to its original color.',
+    'Pintle': 'A Mod slot linked to a seat. A Pintle Mod must be placed in a Pintle slot; its actions may only be used by a Passenger in the linked seat.',
+    'Turret': 'A Mod slot linked to a seat. A Turret Mod must be placed in a Turret slot; its actions may only be used by a Passenger in the linked seat.',
+    'Sidecar': 'A Mod slot that holds Sidecar-type Mods.',
+    'Systems': 'A Mod slot that holds systems/electronics Mods.',
+  },
+};
+
+// Render a keyword list; keywords with a glossary entry become tappable chips.
+function kwChips(keywords) {
+  return (keywords || []).map(k =>
+    VEHICLE_RULES.keywords[k]
+      ? `<span class="kw-chip" data-vrkw="${escHtml(k)}">${escHtml(k)}</span>`
+      : `<span>${escHtml(k)}</span>`
+  ).join(' ');
+}
+
+const vrAnchorId = k => 'vr-kw-' + String(k).replace(/[^a-z0-9]/gi, '');
+
+function openVehicleRules(anchor) {
+  const sections = VEHICLE_RULES.sections.map(s => `
+    <div class="sc-section">
+      <div class="sc-section-title">${escHtml(s.title)}</div>
+      <div class="sc-section-body">${fmtRanges(s.body)}</div>
+    </div>`).join('');
+  const glossary = Object.entries(VEHICLE_RULES.keywords).map(([k, v]) => `
+    <div class="vr-kw" id="${vrAnchorId(k)}">
+      <span class="vr-kw-name">${escHtml(k)}</span>
+      <span class="sc-section-body">${fmtRanges(v)}</span>
+    </div>`).join('');
+
+  const modal = document.createElement('div');
+  modal.className = 'modal-bg';
+  modal.innerHTML = `
+    <div class="modal sc-modal">
+      <div class="sc-modal-head">
+        <div>
+          <h3 style="margin-bottom:2px;">VEHICLE RULES</h3>
+          <div class="scenario-card-meta">Cyberpunk RED: Combat Zone • Omnibus pp.44–51</div>
+        </div>
+        <button class="mini-btn" id="vr-close" style="color:var(--neon-red);border-color:var(--neon-red);">✕ CLOSE</button>
+      </div>
+      ${sections}
+      <div class="sc-section">
+        <div class="sc-section-title">KEYWORD GLOSSARY</div>
+        ${glossary}
+      </div>
+      <div class="modal-actions">
+        <button class="big-btn secondary" id="vr-close2">DONE</button>
+      </div>
+    </div>`;
+  document.getElementById('modal-host').appendChild(modal);
+  const close = () => modal.remove();
+  modal.addEventListener('click', e => { if (e.target === modal) close(); });
+  modal.querySelector('#vr-close').onclick = close;
+  modal.querySelector('#vr-close2').onclick = close;
+
+  if (anchor) {
+    const el = modal.querySelector('#' + vrAnchorId(anchor));
+    if (el) {
+      el.scrollIntoView({ block: 'center' });
+      el.classList.add('vr-flash');
+    }
+  }
+}
+
 function renderStats() {
   $('eb-used').textContent = totalEB();
   $('eb-max').textContent = state.budget;
@@ -768,7 +871,7 @@ function renderRoster() {
       .map(([k,v]) => `${k.slice(0,3)} ${v}`)
       .join(' • ') || 'no skills';
 
-    const keywordsStr = (m.keywords||[]).join(' • ');
+    const keywordsStr = m.isVehicle ? kwChips(m.keywords) : escHtml((m.keywords||[]).join(' • '));
 
     const gearStr = (m.gear||[]).length > 0
       ? `<div style="font-size:10px; margin-top:4px; opacity:0.85;">
@@ -818,6 +921,7 @@ function renderRoster() {
       }
     });
   });
+  wireKeywordChips(area);
 }
 
 function renderPlayMode() {
@@ -951,6 +1055,7 @@ function renderLibrary() {
     items = (DATA.vehicles || []).map(v => ({
       id: v.id, name: v.name, cost: v.cost||0, stars: 0,
       sub: (v.keywords||[]).join(' • ') || 'Vehicle',
+      keywords: v.keywords || [],
       cat: 'vehicle'
     }));
   }
@@ -963,12 +1068,18 @@ function renderLibrary() {
     );
   }
 
+  // On the VEHICLES tab, offer the rules reference (shown even with no results).
+  const rulesBtn = tab === 'vehicles'
+    ? '<button class="mini-btn" id="vr-open" style="width:100%; margin-bottom:8px; color:var(--neon-cyan); border-color:var(--neon-cyan);">📖 VEHICLE RULES</button>'
+    : '';
+
   if (items.length === 0) {
-    list.innerHTML = '<div style="padding:12px; opacity:0.5; font-size:11px; text-align:center;">> NO RESULTS</div>';
+    list.innerHTML = rulesBtn + '<div style="padding:12px; opacity:0.5; font-size:11px; text-align:center;">> NO RESULTS</div>';
+    wireLibraryRules(list);
     return;
   }
 
-  list.innerHTML = items.map(it => {
+  list.innerHTML = rulesBtn + items.map(it => {
     const costLabel = it.cat === 'char' || it.cat === 'gear' || it.cat === 'vehicle'
       ? `<span style="color:var(--neon-yellow); font-weight:bold;">${it.cost} EB</span>`
       : '';
@@ -979,13 +1090,16 @@ function renderLibrary() {
     const gonkBadge = it.isGonk
       ? '<span style="color:var(--neon-pink); font-size:9px; border:1px solid var(--neon-pink); padding:0 3px; border-radius:2px; margin-left:4px;">GONK</span>'
       : '';
+    const subHtml = it.cat === 'vehicle'
+      ? kwChips(it.keywords)
+      : (it.sub ? escHtml(it.sub) : '');
     return `
       <div class="lib-item" data-id="${it.id}" data-cat="${it.cat}" style="cursor:pointer; padding:6px; border:1px solid var(--border); margin-bottom:4px; background:var(--bg-deep);">
         <div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">
           <span style="font-weight:bold; font-size:12px;">${it.name}${gonkBadge}</span>
           <span style="display:flex; gap:6px; align-items:center;">${starLabel} ${credLabel} ${costLabel}</span>
         </div>
-        ${it.sub ? `<div style="font-size:10px; opacity:0.6; margin-top:2px;">${it.sub}</div>` : ''}
+        ${subHtml ? `<div style="font-size:10px; opacity:0.6; margin-top:2px;">${subHtml}</div>` : ''}
       </div>
     `;
   }).join('');
@@ -999,6 +1113,24 @@ function renderLibrary() {
       else if (cat === 'gear') addGearToLast(id);
       else if (cat === 'vehicle') addVehicle(id);
       // prog click is informational only for now
+    });
+  });
+  wireLibraryRules(list);
+}
+
+// Wire the VEHICLE RULES button and any tappable keyword chips within a container.
+function wireLibraryRules(container) {
+  const btn = container.querySelector('#vr-open');
+  if (btn) btn.addEventListener('click', () => openVehicleRules());
+  wireKeywordChips(container);
+}
+
+// Keyword chips open the rules modal at their glossary term (without triggering parent clicks).
+function wireKeywordChips(container) {
+  container.querySelectorAll('[data-vrkw]').forEach(chip => {
+    chip.addEventListener('click', e => {
+      e.stopPropagation();
+      openVehicleRules(chip.dataset.vrkw);
     });
   });
 }
@@ -1278,6 +1410,7 @@ function init() {
     scSearch.oninput = e => { state.scenarioSearch = e.target.value; renderScenarios(); };
   }
   const btnInspire = $('btn-inspire'); if (btnInspire) btnInspire.onclick = inspire;
+  const btnVRules = $('btn-vrules'); if (btnVRules) btnVRules.onclick = () => openVehicleRules();
   const btnInspireBig = $('btn-inspire-big'); if (btnInspireBig) btnInspireBig.onclick = inspire;
   const teamNameEl = $('team-name'); if (teamNameEl) teamNameEl.oninput = e => { state.teamName = e.target.value; saveState(); };
   const factionSel = $('faction-select'); if (factionSel) factionSel.onchange = e => { state.faction = e.target.value; render(); saveState(); };
