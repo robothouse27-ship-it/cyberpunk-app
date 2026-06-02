@@ -1,0 +1,9 @@
+# FBC (Full Body Conversion) cards. One row per card. Lines starting with # are ignored.
+# SKILL COLUMNS (Reflexes,Melee,Ranged,Medical,Tech,Influence):
+#   plain number (e.g. 3)  = REPLACES the model's skill if the FBC value is higher
+#   +number    (e.g. +1)   = ADDS to the model's skill (stacks)
+#   blank                  = no change to that skill
+# bonus_actions = extra action tokens the FBC GRANTS, as letters: G=green Y=yellow R=red (e.g. G or GY)
+# armor = FBC armor value (replaces model armor if higher; blank/0 = none)
+name,cost,cred,rarity,bonus_actions,armor,Reflexes,Melee,Ranged,Medical,Tech,Influence,abilities,keywords
+Dragoon,50,,,G,4,3,3,,,,,"Example from the rule sheet — replace with the real card text.",
