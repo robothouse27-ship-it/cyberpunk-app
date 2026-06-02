@@ -560,6 +560,15 @@ header {
             <button class="mini-btn" id="btn-vrules" style="color: var(--neon-cyan); border-color: var(--neon-cyan);">VEHICLE RULES</button>
           </span>
         </div>
+        <div id="sort-bar" style="display:none; margin:6px 0 8px; font-size:11px;">
+          <label style="opacity:0.7; letter-spacing:1px;">SORT</label>
+          <select id="sort-select" class="field" style="margin-left:6px; font-size:11px;">
+            <option value="custom">Custom (manual)</option>
+            <option value="name">Name (A–Z)</option>
+            <option value="cost">Cost (high→low)</option>
+            <option value="type">Type</option>
+          </select>
+        </div>
         <div id="roster-area">
           <div class="empty-roster">> NO MODELS DEPLOYED<br>> ADD FROM LIBRARY →</div>
         </div>
@@ -616,7 +625,8 @@ let state = {
   woundSelectIdx: null,
   scenarioCat: 'all',
   scenarioSearch: '',
-  scenarioLog: {}  // keyed by scenario name -> { played: bool, notes: string }
+  scenarioLog: {},  // keyed by scenario name -> { played: bool, notes: string }
+  sortBy: 'custom'  // roster ordering: custom | name | cost | type
 };
 
 const $ = id => document.getElementById(id);
@@ -925,6 +935,55 @@ function renderStats() {
   $('street-cred').textContent = totalStars();
 }
 
+// Per-model EB (cost + gear) and a type ordering rank for sorting.
+function modelEB(m) { return (m.cost || 0) + (m.gear || []).reduce((s, g) => s + (g.cost || 0), 0); }
+function typeRank(m) {
+  if (m.isVehicle) return 3;
+  if (m.isGonk) return 2;
+  if ((m.keywords || []).includes('Leader')) return 0;
+  return 1;
+}
+// Display order = indices into state.models after applying the chosen sort.
+// koLast (play mode) sinks knocked-out models to the bottom. Array.sort is
+// stable, so chained sorts preserve the prior grouping.
+function orderedIndices(koLast) {
+  const by = state.sortBy || 'custom';
+  const idx = state.models.map((_, i) => i);
+  if (by === 'name') idx.sort((a, b) => state.models[a].name.localeCompare(state.models[b].name));
+  else if (by === 'cost') idx.sort((a, b) => modelEB(state.models[b]) - modelEB(state.models[a]));
+  else if (by === 'type') idx.sort((a, b) =>
+    typeRank(state.models[a]) - typeRank(state.models[b]) ||
+    state.models[a].name.localeCompare(state.models[b].name));
+  if (koLast) idx.sort((a, b) => (state.models[a].knockedOut ? 1 : 0) - (state.models[b].knockedOut ? 1 : 0));
+  return idx;
+}
+
+// Up/down reorder buttons (only meaningful in custom order). pos is the
+// position within the current display order; total is the display length.
+function reorderControls(uid, pos, total) {
+  if ((state.sortBy || 'custom') !== 'custom') return '';
+  const up = pos > 0 ? `<button class="mini-btn" data-move-up="${uid}" title="move up" style="padding:0 5px;">▲</button>` : '';
+  const down = pos < total - 1 ? `<button class="mini-btn" data-move-down="${uid}" title="move down" style="padding:0 5px;">▼</button>` : '';
+  return up + down;
+}
+
+function moveModel(uid, dir) {
+  const i = state.models.findIndex(x => x.uid === uid);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= state.models.length) return;
+  [state.models[i], state.models[j]] = [state.models[j], state.models[i]];
+  render();
+  saveState();
+}
+
+function toggleKnockedOut(uid) {
+  const m = state.models.find(x => x.uid === uid);
+  if (!m) return;
+  m.knockedOut = !m.knockedOut;
+  render();
+  saveState();
+}
+
 function renderRoster() {
   const area = $('roster-area');
   if (!area) return;
@@ -933,7 +992,9 @@ function renderRoster() {
     return;
   }
 
-  area.innerHTML = state.models.map(m => {
+  const order = orderedIndices(false);
+  area.innerHTML = order.map((mi, pos) => {
+    const m = state.models[mi];
     const tokenHTML = (m.actions||[]).map(a => `
       <div class="action-token ${a.currentColor}" data-uid="${m.uid}" data-aid="${a.id}"
            style="display:inline-block; width:22px; height:22px; border-radius:50%;
@@ -979,8 +1040,11 @@ function renderRoster() {
             ${gearStr}
             ${progStr}
           </div>
-          <button class="mini-btn" data-remove="${m.uid}"
-            style="color:var(--neon-red); border-color:var(--neon-red); flex-shrink:0;">✕</button>
+          <div style="display:flex; flex-direction:column; gap:3px; flex-shrink:0; align-items:flex-end;">
+            <div style="display:flex; gap:3px;">${reorderControls(m.uid, pos, order.length)}</div>
+            <button class="mini-btn" data-remove="${m.uid}"
+              style="color:var(--neon-red); border-color:var(--neon-red);">✕</button>
+          </div>
         </div>
       </div>
     `;
@@ -990,6 +1054,8 @@ function renderRoster() {
   area.querySelectorAll('[data-remove]').forEach(b => {
     b.addEventListener('click', () => removeModel(b.dataset.remove));
   });
+  area.querySelectorAll('[data-move-up]').forEach(b => b.addEventListener('click', () => moveModel(b.dataset.moveUp, -1)));
+  area.querySelectorAll('[data-move-down]').forEach(b => b.addEventListener('click', () => moveModel(b.dataset.moveDown, 1)));
   area.querySelectorAll('.action-token').forEach(t => {
     t.addEventListener('click', () => cycleActionToken(t.dataset.uid, t.dataset.aid));
   });
@@ -1025,8 +1091,11 @@ function renderPlayMode() {
     return;
   }
   
-  area.innerHTML = state.models.map((m, idx) => {
+  const order = orderedIndices(true);
+  area.innerHTML = order.map((idx, pos) => {
+    const m = state.models[idx];
     const healthStatus = getHealthStatus(m);
+    const ko = !!m.knockedOut;
     // Show the equipped loadout in play mode; tapping an item opens its info popup.
     const gearTags = (m.gear||[]).map(g =>
       `<span class="play-tag" data-play-gear="${g.id}" style="cursor:pointer; display:inline-block; font-size:10px; padding:1px 6px; margin:2px 3px 0 0; border:1px solid var(--border); border-radius:3px;" title="tap for info">${escHtml(g.name)}</span>`
@@ -1041,16 +1110,26 @@ function renderPlayMode() {
          </div>`
       : '';
     return `
-      <div class="play-model-card ${healthStatus === 'red' ? 'red-lined' : healthStatus === 'yellow' ? 'yellow-lined' : ''}">
+      <div class="play-model-card ${healthStatus === 'red' ? 'red-lined' : healthStatus === 'yellow' ? 'yellow-lined' : ''}"
+           style="${ko ? 'opacity:0.5; filter:grayscale(1);' : ''}">
         <div class="play-model-header">
           <div class="play-model-info">
-            <div class="play-model-name">${m.name}</div>
+            <div class="play-model-name">${m.name}${ko ? ' <span style="color:var(--neon-red); font-size:9px; border:1px solid var(--neon-red); padding:0 4px; border-radius:2px;">KO</span>' : ''}</div>
             <div class="play-model-type">${m.isGonk ? 'Gonk' : m.isVehicle ? 'Vehicle' : 'Character'}</div>
           </div>
-          <div class="play-health-badge ${healthStatus}">${healthStatus.toUpperCase().substring(0,1)}</div>
+          <div style="display:flex; align-items:center; gap:6px;">
+            ${reorderControls(m.uid, pos, order.length)}
+            <div class="play-health-badge ${healthStatus}">${healthStatus.toUpperCase().substring(0,1)}</div>
+          </div>
         </div>
         ${renderTokenGrid(m, idx)}
         ${loadout}
+        <div style="margin-top:8px;">
+          <button class="mini-btn" data-ko="${m.uid}"
+            style="${ko ? 'color:var(--neon-green); border-color:var(--neon-green);' : 'color:var(--neon-red); border-color:var(--neon-red);'}">
+            ${ko ? 'REVIVE' : 'KNOCKED OUT'}
+          </button>
+        </div>
       </div>
     `;
   }).join('');
@@ -1076,6 +1155,9 @@ function renderPlayMode() {
   area.querySelectorAll('[data-play-prog]').forEach(el => {
     el.addEventListener('click', () => openProgram(el.dataset.playProg));
   });
+  area.querySelectorAll('[data-ko]').forEach(b => b.addEventListener('click', () => toggleKnockedOut(b.dataset.ko)));
+  area.querySelectorAll('[data-move-up]').forEach(b => b.addEventListener('click', () => moveModel(b.dataset.moveUp, -1)));
+  area.querySelectorAll('[data-move-down]').forEach(b => b.addEventListener('click', () => moveModel(b.dataset.moveDown, 1)));
 }
 
 function renderTokenGrid(model, modelIdx) {
@@ -1589,6 +1671,7 @@ function setMode(m) {
 
   // Center content: roster vs scenario list
   if ($('roster-area')) $('roster-area').style.display = isScenarios ? 'none' : 'block';
+  if ($('sort-bar')) $('sort-bar').style.display = isScenarios ? 'none' : 'block';
   if ($('scenario-area')) $('scenario-area').style.display = isScenarios ? 'block' : 'none';
 
   // Library only in Build
@@ -1671,6 +1754,7 @@ function init() {
   const teamNameEl = $('team-name'); if (teamNameEl) teamNameEl.oninput = e => { state.teamName = e.target.value; saveState(); };
   const factionSel = $('faction-select'); if (factionSel) factionSel.onchange = e => { state.faction = e.target.value; render(); saveState(); };
   const budgetSel = $('budget-select'); if (budgetSel) budgetSel.onchange = e => { state.budget = parseInt(e.target.value); render(); saveState(); };
+  const sortSel = $('sort-select'); if (sortSel) { sortSel.value = state.sortBy || 'custom'; sortSel.onchange = e => { state.sortBy = e.target.value; render(); saveState(); }; }
 
   // Library tabs (v3-only)
   document.querySelectorAll('[data-libtab]').forEach(b => {
