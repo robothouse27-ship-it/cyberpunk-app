@@ -557,7 +557,7 @@ header {
           <span id="scenarios-title" style="display:none; color:var(--neon-purple);">SCENARIO DATABASE</span>
           <span id="play-status" style="display:none;">
             <button class="mini-btn" id="btn-inspire" style="color: var(--neon-pink); border-color: var(--neon-pink);">⚡ INSPIRE</button>
-            <button class="mini-btn" id="btn-vrules" style="color: var(--neon-cyan); border-color: var(--neon-cyan);">📖 VEHICLE RULES</button>
+            <button class="mini-btn" id="btn-vrules" style="color: var(--neon-cyan); border-color: var(--neon-cyan);">VEHICLE RULES</button>
           </span>
         </div>
         <div id="roster-area">
@@ -699,7 +699,7 @@ function renderScenarios() {
         ? '<span style="color:var(--neon-green); font-size:9px; border:1px solid var(--neon-green); padding:0 4px; border-radius:2px; margin-left:6px;">✓ PLAYED</span>'
         : '';
       const noteDot = (log.notes && log.notes.trim())
-        ? '<span title="has notes" style="color:var(--neon-cyan); font-size:10px; margin-left:4px;">📝</span>'
+        ? '<span title="has notes" style="color:var(--neon-cyan); font-size:9px; border:1px solid var(--neon-cyan); padding:0 4px; border-radius:2px; margin-left:4px;">NOTES</span>'
         : '';
       return `
         <div class="scenario-card" data-sc="${i}">
@@ -958,13 +958,13 @@ function renderRoster() {
 
     const gearStr = (m.gear||[]).length > 0
       ? `<div style="font-size:10px; margin-top:4px; opacity:0.85;">
-           ⚙ ${m.gear.map(g => `<span data-gear-uid="${m.uid}" data-gear-id="${g.id}" style="cursor:pointer;" title="click to remove">${g.name} (${g.cost})</span>`).join(', ')}
+           Gear: ${m.gear.map(g => `<span data-gear-uid="${m.uid}" data-gear-id="${g.id}" style="cursor:pointer;" title="click to remove">${g.name} (${g.cost})</span>`).join(', ')}
          </div>`
       : '';
 
     const progStr = (m.programs||[]).length > 0
       ? `<div style="font-size:10px; margin-top:4px; opacity:0.85; color:var(--neon-cyan);">
-           ⌬ ${m.programs.map(p => `<span data-prog-uid="${m.uid}" data-prog-id="${p.id}" style="cursor:pointer;" title="click to remove">${p.name}</span>`).join(', ')}
+           Programs: ${m.programs.map(p => `<span data-prog-uid="${m.uid}" data-prog-id="${p.id}" style="cursor:pointer;" title="click to remove">${p.name}</span>`).join(', ')}
          </div>`
       : '';
 
@@ -1043,8 +1043,8 @@ function renderPlayMode() {
     ).join('');
     const loadout = (gearTags || progTags)
       ? `<div class="play-loadout" style="margin-top:6px;">
-           ${gearTags ? `<div style="font-size:10px; opacity:0.85;">⚙ ${gearTags}</div>` : ''}
-           ${progTags ? `<div style="font-size:10px; opacity:0.85; margin-top:2px;">⌬ ${progTags}</div>` : ''}
+           ${gearTags ? `<div style="font-size:10px; opacity:0.85;">Gear: ${gearTags}</div>` : ''}
+           ${progTags ? `<div style="font-size:10px; opacity:0.85; margin-top:2px;">Programs: ${progTags}</div>` : ''}
          </div>`
       : '';
     return `
@@ -1120,8 +1120,8 @@ function renderTokenGrid(model, modelIdx) {
     <div class="token-actions">
       ${inWound
         ? `<button class="token-action-btn wound" data-wound="${modelIdx}" style="background:var(--neon-red);color:#fff;">✕ CANCEL</button>`
-        : `<button class="token-action-btn wound" data-wound="${modelIdx}">⚔ WOUND</button>`}
-      <button class="token-action-btn heal" data-heal="${modelIdx}">💊 HEAL</button>
+        : `<button class="token-action-btn wound" data-wound="${modelIdx}">WOUND</button>`}
+      <button class="token-action-btn heal" data-heal="${modelIdx}">HEAL</button>
     </div>
   `;
 }
@@ -1191,7 +1191,7 @@ function renderLibrary() {
 
   // On the VEHICLES tab, offer the rules reference (shown even with no results).
   const rulesBtn = tab === 'vehicles'
-    ? '<button class="mini-btn" id="vr-open" style="width:100%; margin-bottom:8px; color:var(--neon-cyan); border-color:var(--neon-cyan);">📖 VEHICLE RULES</button>'
+    ? '<button class="mini-btn" id="vr-open" style="width:100%; margin-bottom:8px; color:var(--neon-cyan); border-color:var(--neon-cyan);">VEHICLE RULES</button>'
     : '';
 
   if (items.length === 0) {
