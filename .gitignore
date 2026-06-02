@@ -4,5 +4,10 @@ node_modules/
 __pycache__/
 .DS_Store
 
+# Pre-edit backups written by the build/splice scripts
+*.bak
+*.progbak
+*.addbak
+
 # Source rulebook PDFs (copyrighted — keep out of the repo)
 *.pdf
