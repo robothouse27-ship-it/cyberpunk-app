@@ -874,6 +874,99 @@ function openProgram(id) {
   modal.querySelector('#pg-equip').onclick = () => { close(); equipProgram(p.id); };
 }
 
+// Full read-only detail sheet for a model: effective stats, action tokens, special
+// rules, and every attached card (FBC, gear, programs) with their rules text. Used
+// in play mode so everything a player needs about a model is one tap away.
+function openModelDetail(uid) {
+  const m = state.models.find(x => x.uid === uid);
+  if (!m) return;
+  const eff = getEffectiveStats(m);
+  const typeLabel = m.isGonk ? 'Gonk' : m.isVehicle ? 'Vehicle' : 'Character';
+
+  const statChip = (label, val) =>
+    `<span style="display:inline-block; font-size:13px; padding:4px 10px; margin:0 6px 6px 0; border:1px solid var(--border); border-radius:3px;"><span style="opacity:0.6;">${label}</span> <b style="color:var(--neon-cyan);">${val}</b></span>`;
+  const statChips = statChip('ARM', eff.armor) +
+    Object.entries(eff.skills).filter(([, v]) => v > 0)
+      .map(([k, v]) => statChip(k.slice(0, 3).toUpperCase(), v)).join('');
+
+  const tokenDots = (m.actions || []).map(a => {
+    const c = a.color === 'green' ? 'var(--neon-green)' : a.color === 'yellow' ? 'var(--neon-yellow)' : 'var(--neon-red)';
+    return `<span title="${a.color}${a.fromFBC ? ' (FBC)' : ''}" style="display:inline-block; width:18px; height:18px; border-radius:50%; background:${c}; border:2px solid #000; margin-right:4px;"></span>`;
+  }).join('') || '<span style="opacity:0.5; font-size:11px;">no actions</span>';
+
+  const section = (title, body, color) =>
+    `<div class="sc-section"><div style="font-size:11px; letter-spacing:1px; opacity:0.75; margin-bottom:5px; color:${color || 'var(--text)'};">${title}</div>${body}</div>`;
+
+  const specialHtml = m.special
+    ? section('SPECIAL RULES', `<div class="sc-section-body">${fmtRanges(m.special)}</div>`)
+    : '';
+
+  let fbcHtml = '';
+  if (m.fbc) {
+    const f = findFBC(m.fbc.id);
+    if (f) {
+      const grant = [
+        f.bonus_actions ? '+' + f.bonus_actions + ' action' : '',
+        f.armor ? 'Armor ' + f.armor : '',
+        ...Object.entries(f.skills || {}).map(([k, v]) => `${k} ${v}`),
+        ...Object.entries(f.skill_bonus || {}).map(([k, v]) => `${k} +${v}`),
+      ].filter(Boolean).join(' • ');
+      fbcHtml = section('FBC: ' + escHtml(f.name),
+        `${grant ? `<div style="font-size:10px; opacity:0.7; margin-bottom:4px;">${escHtml(grant)}</div>` : ''}<div class="sc-section-body">${f.abilities ? fmtRanges(f.abilities) : '<span style="opacity:0.5;">No ability text.</span>'}</div>`,
+        'var(--neon-pink)');
+    }
+  }
+
+  const gearHtml = (m.gear || []).length ? section('GEAR', (m.gear || []).map(gi => {
+    const found = findGear(gi.id);
+    const g = found ? found.gear : gi;
+    const meta = [g.type, g.range, ...(g.weapon_traits || []), ...(g.keywords || [])].filter(Boolean).join(' • ');
+    return `<div style="margin-bottom:9px;">
+      <div style="font-weight:bold; font-size:12px;">${escHtml(g.name)}</div>
+      ${meta ? `<div style="font-size:10px; opacity:0.6;">${escHtml(meta)}</div>` : ''}
+      ${g.description ? `<div style="font-size:11px; margin-top:2px;">${fmtRanges(g.description)}</div>` : ''}
+    </div>`;
+  }).join('')) : '';
+
+  const progHtml = (m.programs || []).length ? section('PROGRAMS', (m.programs || []).map(pi => {
+    const found = findProgram(pi.id);
+    const p = found ? found.program : pi;
+    const body = p.desc || p.text || p.special || p.rules || p.effect || '';
+    return `<div style="margin-bottom:9px;">
+      <div style="font-weight:bold; font-size:12px; color:var(--neon-cyan);">${escHtml(p.name)}</div>
+      ${body ? `<div style="font-size:11px; margin-top:2px;">${fmtRanges(body)}</div>` : '<div style="font-size:10px; opacity:0.5;">No rules text transcribed yet.</div>'}
+    </div>`;
+  }).join(''), 'var(--neon-cyan)') : '';
+
+  const kw = (m.keywords || []).join(' • ');
+
+  const modal = document.createElement('div');
+  modal.className = 'modal-bg';
+  modal.innerHTML = `
+    <div class="modal sc-modal">
+      <div class="sc-modal-head">
+        <div>
+          <h3 style="margin-bottom:2px;">${escHtml(m.name)}${m.knockedOut ? ' <span style="color:var(--neon-red);font-size:10px; border:1px solid var(--neon-red); padding:0 4px; border-radius:2px;">KO</span>' : ''}</h3>
+          <div class="scenario-card-meta">${typeLabel}${kw ? ' • ' + escHtml(kw) : ''}</div>
+        </div>
+        <button class="mini-btn" id="md-close" style="color:var(--neon-red);border-color:var(--neon-red);">✕ CLOSE</button>
+      </div>
+      <div class="sc-section">
+        <div style="margin-bottom:8px;">${statChips}</div>
+        <div>${tokenDots}</div>
+      </div>
+      ${specialHtml}${fbcHtml}${gearHtml}${progHtml}
+      <div class="modal-actions">
+        <button class="big-btn secondary" id="md-close2">DONE</button>
+      </div>
+    </div>`;
+  document.getElementById('modal-host').appendChild(modal);
+  const close = () => modal.remove();
+  modal.addEventListener('click', e => { if (e.target === modal) close(); });
+  modal.querySelector('#md-close').onclick = close;
+  modal.querySelector('#md-close2').onclick = close;
+}
+
 // ===== VEHICLE RULES REFERENCE (Omnibus pp.44-51) =====
 const VEHICLE_RULES = {
   sections: [
@@ -1146,25 +1239,34 @@ function renderPlayMode() {
     const m = state.models[idx];
     const healthStatus = getHealthStatus(m);
     const ko = !!m.knockedOut;
+    const eff = getEffectiveStats(m);
+    // Readable stat line: effective ARM + every skill the model has.
+    const statLine = '<b style="color:var(--neon-yellow);">ARM ' + eff.armor + '</b>' +
+      Object.entries(eff.skills).filter(([, v]) => v > 0)
+        .map(([k, v]) => ` • ${k.slice(0, 3).toUpperCase()} ${v}`).join('');
     // Show the equipped loadout in play mode; tapping an item opens its info popup.
     const gearTags = (m.gear||[]).map(g =>
-      `<span class="play-tag" data-play-gear="${g.id}" style="cursor:pointer; display:inline-block; font-size:10px; padding:1px 6px; margin:2px 3px 0 0; border:1px solid var(--border); border-radius:3px;" title="tap for info">${escHtml(g.name)}</span>`
+      `<span class="play-tag" data-play-gear="${g.id}" style="cursor:pointer; display:inline-block; font-size:11px; padding:2px 7px; margin:2px 3px 0 0; border:1px solid var(--border); border-radius:3px;" title="tap for info">${escHtml(g.name)}</span>`
     ).join('');
     const progTags = (m.programs||[]).map(p =>
-      `<span class="play-tag" data-play-prog="${p.id}" style="cursor:pointer; display:inline-block; font-size:10px; padding:1px 6px; margin:2px 3px 0 0; border:1px solid var(--neon-cyan); color:var(--neon-cyan); border-radius:3px;" title="tap for info">${escHtml(p.name)}</span>`
+      `<span class="play-tag" data-play-prog="${p.id}" style="cursor:pointer; display:inline-block; font-size:11px; padding:2px 7px; margin:2px 3px 0 0; border:1px solid var(--neon-cyan); color:var(--neon-cyan); border-radius:3px;" title="tap for info">${escHtml(p.name)}</span>`
     ).join('');
-    const loadout = (gearTags || progTags)
+    const fbcTag = m.fbc
+      ? `<span class="play-tag" data-detail="${m.uid}" style="cursor:pointer; display:inline-block; font-size:11px; padding:2px 7px; margin:2px 3px 0 0; border:1px solid var(--neon-pink); color:var(--neon-pink); border-radius:3px;" title="tap for full sheet">${escHtml(m.fbc.name)}</span>`
+      : '';
+    const loadout = (gearTags || progTags || fbcTag)
       ? `<div class="play-loadout" style="margin-top:6px;">
-           ${gearTags ? `<div style="font-size:10px; opacity:0.85;">Gear: ${gearTags}</div>` : ''}
-           ${progTags ? `<div style="font-size:10px; opacity:0.85; margin-top:2px;">Programs: ${progTags}</div>` : ''}
+           ${gearTags ? `<div style="font-size:11px; opacity:0.9; margin-top:2px;">Gear: ${gearTags}</div>` : ''}
+           ${progTags ? `<div style="font-size:11px; opacity:0.9; margin-top:2px;">Programs: ${progTags}</div>` : ''}
+           ${fbcTag ? `<div style="font-size:11px; opacity:0.9; margin-top:2px;">FBC: ${fbcTag}</div>` : ''}
          </div>`
       : '';
     return `
       <div class="play-model-card ${healthStatus === 'red' ? 'red-lined' : healthStatus === 'yellow' ? 'yellow-lined' : ''}"
            style="${ko ? 'opacity:0.5; filter:grayscale(1);' : ''}">
         <div class="play-model-header">
-          <div class="play-model-info">
-            <div class="play-model-name">${m.name}${ko ? ' <span style="color:var(--neon-red); font-size:9px; border:1px solid var(--neon-red); padding:0 4px; border-radius:2px;">KO</span>' : ''}</div>
+          <div class="play-model-info" data-detail="${m.uid}" style="cursor:pointer;" title="tap for full sheet">
+            <div class="play-model-name">${m.name}${ko ? ' <span style="color:var(--neon-red); font-size:9px; border:1px solid var(--neon-red); padding:0 4px; border-radius:2px;">KO</span>' : ''} <span style="font-size:11px; color:var(--neon-cyan); opacity:0.8;">&#9432;</span></div>
             <div class="play-model-type">${m.isGonk ? 'Gonk' : m.isVehicle ? 'Vehicle' : 'Character'}</div>
           </div>
           <div style="display:flex; align-items:center; gap:6px;">
@@ -1172,6 +1274,7 @@ function renderPlayMode() {
             <div class="play-health-badge ${healthStatus}">${healthStatus.toUpperCase().substring(0,1)}</div>
           </div>
         </div>
+        <div class="play-stats" style="font-size:12px; margin:4px 0 2px; opacity:0.95;">${statLine}</div>
         ${renderTokenGrid(m, idx)}
         ${loadout}
         <div style="margin-top:8px;">
@@ -1204,6 +1307,9 @@ function renderPlayMode() {
   });
   area.querySelectorAll('[data-play-prog]').forEach(el => {
     el.addEventListener('click', () => openProgram(el.dataset.playProg));
+  });
+  area.querySelectorAll('[data-detail]').forEach(el => {
+    el.addEventListener('click', () => openModelDetail(el.dataset.detail));
   });
   area.querySelectorAll('[data-ko]').forEach(b => b.addEventListener('click', () => toggleKnockedOut(b.dataset.ko)));
   area.querySelectorAll('[data-move-up]').forEach(b => b.addEventListener('click', () => moveModel(b.dataset.moveUp, -1)));
