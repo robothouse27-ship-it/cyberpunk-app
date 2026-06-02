@@ -1,13 +1,7 @@
-out/
+# Plaintext app source — kept local so only the password-locked index.html is published
+app.src.html
+
+# Tooling / artifacts
 node_modules/
-*.pyc
-__pycache__/
-.DS_Store
-
-# Pre-edit backups written by the build/splice scripts
 *.bak
-*.progbak
-*.addbak
-
-# Source rulebook PDFs (copyrighted — keep out of the repo)
-*.pdf
+*.bak.csv

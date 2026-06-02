@@ -6,4 +6,14 @@
 # bonus_actions = extra action tokens the FBC GRANTS, as letters: G=green Y=yellow R=red (e.g. G or GY)
 # armor = FBC armor value (replaces model armor if higher; blank/0 = none)
 name,cost,cred,rarity,bonus_actions,armor,Reflexes,Melee,Ranged,Medical,Tech,Influence,abilities,keywords
-Dragoon,50,,,G,4,3,3,,,,,"Example from the rule sheet — replace with the real card text.",
+Samson,22,4,2,YY,4,+2,2,,,1,,"Tireless: immune to Stun (FBC skills). Multi-Toolkit: always succeeds at non-Program Tech rolls against the Obstacle die. Super Dense: Melee attacks gain Deadly Crits & Push.",
+Dragoon,25,6,2,G,4,3,3,3,,,,"Arsenal: Melee attacks gain Deadly Crits; Ranged attacks gain Rapid 2. More Machine: when this model is Repaired, refresh the Repaired token. Elite Cyber: after this model activates, it may Refresh an Action token.",
+Wingman,17,4,2,G,3,2,,3,,2,,"Crash Ready: immune to fall damage. Milspec Optics: Ranged attacks against targets beyond RED range gain Accurate. Elite Cyber: after this model activates, it may Refresh an Action token.",Wheelman
+Alpha Class,20,4,2,G,3,3,2,2,,,,"Customizable: may add Cybergear Melee, Ranged, and Reflexes bonuses to its FBC skills. More Machine: when this model is Repaired, refresh the Repaired token. Elite Cyber: after this model activates, it may Refresh an Action token.",
+Wiseman,18,5,2,G,3,,2,2,,+1,,"Quad-Decks: may equip up to 8 Programs. Net Soldier: Program attacks gain Deadly. Elite Cyber: after this model activates, it may Refresh an Action token.",Netrunner
+Enforcer,19,5,2,Y,4,,+1,3,,,+1,"Stress Analyzer: immune to rival Influence actions. Protector: Rivals brawling with this model may only target this model with Attacks. Super Dense: Melee attacks gain Deadly Crits & Push.",
+Kildare,18,5,2,Y,3,,2,2,+2,,,"Elite Medic: when you Inspire your team, Heal 1 all friendly Characters within RED. Micromed Suite: when this model heals a target, refresh the healed token. Instant Medic: [Rapid 2, Heal 1].",
+Eclipse,22,6,2,Y,2,+1,+1,3,,,,"Chameleon Coating: may not be the target of Ranged attacks while it has no spent Action tokens. Intrusion Spec: this model's RED move actions are YELLOW. Mono-Arsenal: basic Melee attacks gain Pierce 3 and Deadly Crits.",
+Sheol,18,5,2,Y,3,2,+1,2,,,,"Enviro-Seal: immune to all Medical actions. Hazard Ready: this model's non-Attack [RE]actions are Free. Elite Cyber: after this model activates, it may Refresh an Action token.",
+Brimstone,19,3,2,Y,2,+1,3,,+1,,,"Brimstone Coating: immune to damage from Blast attacks. Firefighter: ignores Unwieldy on Gear. High Capacity: ignores Discard on Grenade Gear.",
+Spyder 2.0,19,6,2,Y,2,,2,2,,+1,,"Chameleon Coating: may not be the target of Ranged attacks while it has no spent Action tokens. Four Arms: when this model Crits an Action roll, refresh an Action. Spook's Intel: look at the top 5 cards of the Loot deck and return them in any order.",Netrunner

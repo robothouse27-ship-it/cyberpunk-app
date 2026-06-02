@@ -10,8 +10,10 @@ number (e.g. "3") -> replace-if-higher (skills); blank -> no change.
 import json, csv, re, unicodedata, shutil
 
 HERE = '/Users/Benjamin/Desktop/Projects/cyberpunk app/'
+# app.src.html is the plaintext working source; index.html is the locked build.
+# After running this, re-run build_locked.mjs to regenerate the locked index.html.
 CSV = HERE + 'fbc_to_fill.csv'
-HTML_FILES = [HERE + 'index.html']
+HTML_FILES = [HERE + 'app.src.html']
 
 SKILLS = ['Reflexes', 'Melee', 'Ranged', 'Medical', 'Tech', 'Influence']
 START = '/* FBC_DATA_START */'
