@@ -1,0 +1,398 @@
+[
+  {
+    "name": "Advanced Shroud",
+    "faction": "Generation Red",
+    "page": 240,
+    "desc": ""
+  },
+  {
+    "name": "Aerial Strike",
+    "faction": "Arasaka",
+    "page": 240,
+    "desc": ""
+  },
+  {
+    "name": "Ambush",
+    "faction": "Universal",
+    "page": 240,
+    "desc": ""
+  },
+  {
+    "name": "Adware",
+    "faction": "Universal",
+    "page": 240,
+    "desc": ""
+  },
+  {
+    "name": "Alley Rat",
+    "faction": "Zoners",
+    "page": 240,
+    "desc": ""
+  },
+  {
+    "name": "Armed and Dangerous",
+    "faction": "Lawmen",
+    "page": 240,
+    "desc": ""
+  },
+  {
+    "name": "Awesome Memes",
+    "faction": "Bozos",
+    "page": 241,
+    "desc": ""
+  },
+  {
+    "name": "Ban Hammer",
+    "faction": "Universal",
+    "page": 241,
+    "desc": ""
+  },
+  {
+    "name": "Buffer Zone",
+    "faction": "Universal",
+    "page": 241,
+    "desc": ""
+  },
+  {
+    "name": "Balloon Animals",
+    "faction": "Bozos",
+    "page": 241,
+    "desc": ""
+  },
+  {
+    "name": "Berserker",
+    "faction": "Maelstrom",
+    "page": 241,
+    "desc": ""
+  },
+  {
+    "name": "Coordinate Surge",
+    "faction": "Universal",
+    "page": 241,
+    "desc": ""
+  },
+  {
+    "name": "CRaB Drone Control",
+    "faction": "Universal",
+    "page": 242,
+    "desc": ""
+  },
+  {
+    "name": "Death Dealer",
+    "faction": "Maelstrom",
+    "page": 242,
+    "desc": ""
+  },
+  {
+    "name": "Eagle Eye",
+    "faction": "Lawmen",
+    "page": 242,
+    "desc": ""
+  },
+  {
+    "name": "Cripple Wave",
+    "faction": "Tyger Claws",
+    "page": 242,
+    "desc": ""
+  },
+  {
+    "name": "Death Mark",
+    "faction": "Tyger Claws",
+    "page": 242,
+    "desc": ""
+  },
+  {
+    "name": "Enhanced Reflexes",
+    "faction": "Generation Red",
+    "page": 242,
+    "desc": ""
+  },
+  {
+    "name": "Enhanced Targeting",
+    "faction": "Edgerunners",
+    "page": 243,
+    "desc": ""
+  },
+  {
+    "name": "Falsified Info",
+    "faction": "Danger Gals",
+    "page": 243,
+    "desc": ""
+  },
+  {
+    "name": "Homing Beacon",
+    "faction": "Danger Gals",
+    "page": 243,
+    "desc": ""
+  },
+  {
+    "name": "Every Fool Has His Day",
+    "faction": "Bozos",
+    "page": 243,
+    "desc": ""
+  },
+  {
+    "name": "Hidey Hole",
+    "faction": "Zoners",
+    "page": 243,
+    "desc": ""
+  },
+  {
+    "name": "Hyper Empathy",
+    "faction": "Generation Red",
+    "page": 243,
+    "desc": ""
+  },
+  {
+    "name": "I Am Rubber...",
+    "faction": "Bozos",
+    "page": 244,
+    "desc": ""
+  },
+  {
+    "name": "Junk.exe",
+    "faction": "Generation Red",
+    "page": 244,
+    "desc": ""
+  },
+  {
+    "name": "Linked Tech",
+    "faction": "Arasaka",
+    "page": 244,
+    "desc": ""
+  },
+  {
+    "name": "Instill Rage",
+    "faction": "Universal",
+    "page": 244,
+    "desc": ""
+  },
+  {
+    "name": "Leaping Tyger",
+    "faction": "Tyger Claws",
+    "page": 244,
+    "desc": ""
+  },
+  {
+    "name": "Lookout",
+    "faction": "Lawmen",
+    "page": 244,
+    "desc": ""
+  },
+  {
+    "name": "Magnetic Shielding",
+    "faction": "Arasaka",
+    "page": 245,
+    "desc": ""
+  },
+  {
+    "name": "Media Drone Control",
+    "faction": "Universal",
+    "page": 245,
+    "desc": ""
+  },
+  {
+    "name": "Memory Dump",
+    "faction": "Edgerunners",
+    "page": 245,
+    "desc": ""
+  },
+  {
+    "name": "Mark Target",
+    "faction": "Edgerunners",
+    "page": 245,
+    "desc": ""
+  },
+  {
+    "name": "Medical Agent",
+    "faction": "Universal",
+    "page": 245,
+    "desc": ""
+  },
+  {
+    "name": "Metal Surge",
+    "faction": "Maelstrom",
+    "page": 245,
+    "desc": ""
+  },
+  {
+    "name": "Militech Spyware",
+    "faction": "Universal",
+    "page": 246,
+    "desc": ""
+  },
+  {
+    "name": "Monkey Wisdom",
+    "faction": "Tyger Claws",
+    "page": 246,
+    "desc": ""
+  },
+  {
+    "name": "Nerve Scrub",
+    "faction": "Universal",
+    "page": 246,
+    "desc": ""
+  },
+  {
+    "name": "Molasses.exe",
+    "faction": "Edgerunners",
+    "page": 246,
+    "desc": ""
+  },
+  {
+    "name": "Nano Regeneration",
+    "faction": "Bozos",
+    "page": 246,
+    "desc": ""
+  },
+  {
+    "name": "Nervous System Overload",
+    "faction": "Universal",
+    "page": 246,
+    "desc": ""
+  },
+  {
+    "name": "Neural Activator",
+    "faction": "Arasaka",
+    "page": 247,
+    "desc": ""
+  },
+  {
+    "name": "Program 7",
+    "faction": "Universal",
+    "page": 247,
+    "desc": ""
+  },
+  {
+    "name": "Ransomware",
+    "faction": "Universal",
+    "page": 247,
+    "desc": ""
+  },
+  {
+    "name": "Overlock",
+    "faction": "Danger Gals",
+    "page": 247,
+    "desc": ""
+  },
+  {
+    "name": "Puppet Master",
+    "faction": "Maelstrom",
+    "page": 247,
+    "desc": ""
+  },
+  {
+    "name": "Request Backup",
+    "faction": "Zoners",
+    "page": 247,
+    "desc": ""
+  },
+  {
+    "name": "Responsive Suits",
+    "faction": "Arasaka",
+    "page": 248,
+    "desc": ""
+  },
+  {
+    "name": "See Ya",
+    "faction": "Universal",
+    "page": 248,
+    "desc": ""
+  },
+  {
+    "name": "Spread Out",
+    "faction": "Danger Gals",
+    "page": 248,
+    "desc": ""
+  },
+  {
+    "name": "Running Rabbit",
+    "faction": "Tyger Claws",
+    "page": 248,
+    "desc": ""
+  },
+  {
+    "name": "Shield",
+    "faction": "Universal",
+    "page": 248,
+    "desc": ""
+  },
+  {
+    "name": "Stomp.exe",
+    "faction": "Generation Red",
+    "page": 248,
+    "desc": ""
+  },
+  {
+    "name": "Stress Evaluator",
+    "faction": "Universal",
+    "page": 249,
+    "desc": ""
+  },
+  {
+    "name": "Sword",
+    "faction": "Universal",
+    "page": 249,
+    "desc": ""
+  },
+  {
+    "name": "Take Ya With Me",
+    "faction": "Danger Gals",
+    "page": 249,
+    "desc": ""
+  },
+  {
+    "name": "Sudden Reboot",
+    "faction": "Universal",
+    "page": 249,
+    "desc": ""
+  },
+  {
+    "name": "Tag!",
+    "faction": "Zoners",
+    "page": 249,
+    "desc": ""
+  },
+  {
+    "name": "Takedown",
+    "faction": "Lawmen",
+    "page": 249,
+    "desc": ""
+  },
+  {
+    "name": "Tango Down",
+    "faction": "Lawmen",
+    "page": 250,
+    "desc": ""
+  },
+  {
+    "name": "Vrizz Bolt",
+    "faction": "Universal",
+    "page": 250,
+    "desc": ""
+  },
+  {
+    "name": "Witness Me",
+    "faction": "Maelstrom",
+    "page": 250,
+    "desc": ""
+  },
+  {
+    "name": "Treasure Seeker",
+    "faction": "Zoners",
+    "page": 250,
+    "desc": ""
+  },
+  {
+    "name": "Trojan Alpha",
+    "faction": "Universal",
+    "page": 250,
+    "desc": ""
+  },
+  {
+    "name": "Worm",
+    "faction": "Universal",
+    "page": 250,
+    "desc": ""
+  }
+]
