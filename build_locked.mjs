@@ -75,8 +75,14 @@ const f=document.getElementById("f"),err=document.getElementById("err"),btn=docu
 f.addEventListener("submit",async e=>{
   e.preventDefault();err.textContent="";btn.textContent="Unlocking\\u2026";btn.disabled=true;
   try{
-    const html=await unlock(document.getElementById("pw").value);
+    let html=await unlock(document.getElementById("pw").value);
     sessionStorage.setItem("cz_pw_ok","1");
+    // The app runs from a blob: URL, where relative paths (e.g. cards/x.png) can't
+    // resolve to the real site. Inject the true base so the app can build absolute
+    // asset URLs from it.
+    var ab=location.href.replace(/[?#].*$/,"").replace(/[^/]*$/,"");
+    var inj="<scr"+"ipt>window.__APP_BASE__="+JSON.stringify(ab)+"</scr"+"ipt>";
+    html=html.replace("<head>","<head>"+inj);
     const blob=new Blob([html],{type:"text/html"});
     location.replace(URL.createObjectURL(blob));
   }catch(_){
