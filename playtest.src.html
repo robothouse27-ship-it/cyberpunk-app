@@ -575,6 +575,7 @@ select, select option { text-align: center; text-align-last: center; }
         <button class="mode-tab active" id="tab-build" data-i18n="build">BUILD</button>
         <button class="mode-tab" id="tab-play" data-i18n="play">PLAY</button>
         <button class="mode-tab" id="tab-scenarios" data-i18n="scenarios">SCENARIOS</button>
+        <button class="mode-tab" id="tab-playtest">REPORT</button>
       </div>
       <button class="gear-btn" id="btn-settings" title="Settings" data-i18n-title="settings" aria-label="Settings">⚙</button>
     </div>
@@ -709,6 +710,12 @@ select, select option { text-align: center; text-align-last: center; }
         <div class="library-list" id="library-list"></div>
       </div>
     </div>
+  </div>
+
+  <!-- PLAYTEST: full-width Battle Report sheet (loaded in an isolated iframe) -->
+  <div id="playtest-area" style="display:none;">
+    <iframe id="playtest-frame" title="Battle Report" loading="lazy"
+      style="width:100%; height:calc(100vh - 110px); border:1px solid var(--border); border-radius:8px; background:var(--bg-deep);"></iframe>
   </div>
 </div>
 
@@ -2465,11 +2472,25 @@ function setMode(m) {
   const isBuild = m === 'build';
   const isPlay = m === 'play';
   const isScenarios = m === 'scenarios';
+  const isPlaytest = m === 'playtest';
 
-  ['build', 'play', 'scenarios'].forEach(x => {
+  ['build', 'play', 'scenarios', 'playtest'].forEach(x => {
     const tab = $('tab-' + x);
     if (tab) tab.classList.toggle('active', x === m);
   });
+
+  // REPORT mode swaps the 3-column layout for the full-width Battle Report sheet,
+  // loaded once (lazily) into an isolated iframe so its styles can't clash.
+  const layoutEl = document.querySelector('.layout');
+  if (layoutEl) layoutEl.style.display = isPlaytest ? 'none' : '';
+  const ptArea = $('playtest-area');
+  if (ptArea) {
+    ptArea.style.display = isPlaytest ? 'block' : 'none';
+    if (isPlaytest) {
+      const fr = $('playtest-frame');
+      if (fr && !fr.getAttribute('src')) fr.src = assetUrl('post-game-report-mockup.html');
+    }
+  }
 
   // Center panel titles
   if ($('roster-title')) $('roster-title').style.display = (isBuild) ? 'inline' : 'none';
@@ -2542,6 +2563,7 @@ function init() {
   const tabBuild = $('tab-build'); if (tabBuild) tabBuild.onclick = () => setMode('build');
   const tabPlay = $('tab-play'); if (tabPlay) tabPlay.onclick = () => setMode('play');
   const tabScenarios = $('tab-scenarios'); if (tabScenarios) tabScenarios.onclick = () => setMode('scenarios');
+  const tabPlaytest = $('tab-playtest'); if (tabPlaytest) tabPlaytest.onclick = () => setMode('playtest');
   // Luck token +/- controls
   const luckPlus = $('luck-plus'); if (luckPlus) luckPlus.onclick = addLuck;
   const luckMinus = $('luck-minus'); if (luckMinus) luckMinus.onclick = removeLuck;
