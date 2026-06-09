@@ -10,8 +10,15 @@ import { webcrypto as crypto } from 'crypto';
 const pw = process.env.CZ_PW;
 if (!pw) { console.error('ERROR: set the password first, e.g.  CZ_PW=1234 node build_locked.mjs'); process.exit(1); }
 
-const SRC = 'app.src.html';
-const OUT = 'index.html';
+// SRC/OUT and the lock-screen labels can be overridden via env so the same
+// script builds both apps:
+//   CZ_PW=… node build_locked.mjs                                  -> index.html (Combat Zone)
+//   CZ_PW=… CZ_SRC=playtest.src.html CZ_OUT=playtest.html \
+//     CZ_TITLE='PLAYTEST — Locked' CZ_HEADING='PLAYTEST' node build_locked.mjs
+const SRC = process.env.CZ_SRC || 'app.src.html';
+const OUT = process.env.CZ_OUT || 'index.html';
+const LOCK_TITLE = process.env.CZ_TITLE || 'Combat Zone — Locked';
+const LOCK_HEADING = process.env.CZ_HEADING || 'Combat Zone Roster';
 const ITER = 250000;
 
 const plaintext = readFileSync(SRC);
@@ -30,7 +37,7 @@ const wrapper = `<!DOCTYPE html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Combat Zone — Locked</title>
+<title>${LOCK_TITLE}</title>
 <style>
   :root{color-scheme:dark}
   *{box-sizing:border-box}
@@ -55,7 +62,7 @@ const wrapper = `<!DOCTYPE html>
 <body>
   <form class="box" id="f">
     <div class="lock">&#128274;</div>
-    <h1>Combat Zone Roster</h1>
+    <h1>${LOCK_HEADING}</h1>
     <p class="sub">Enter the password to unlock.</p>
     <input id="pw" type="password" inputmode="numeric" autocomplete="current-password" placeholder="Password" autofocus>
     <button type="submit" id="btn">Unlock</button>
