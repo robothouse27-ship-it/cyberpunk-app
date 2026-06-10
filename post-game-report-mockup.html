@@ -338,35 +338,15 @@ tbody input:focus { border-bottom-color: var(--neon-pink); background: rgba(255,
 <div class="card">
   <div class="card-head"><span class="step">01</span><h2>Game Information</h2></div>
   <div class="card-body">
-    <div class="grid grid-4" style="margin-bottom:14px">
+    <div class="grid grid-3" style="margin-bottom:14px">
       <div class="field"><label class="lbl">Date</label><input type="date" id="date"></div>
       <div class="field"><label class="lbl">Mission</label><input type="text" id="mission" placeholder="Type the mission name — e.g. Turf War"></div>
-      <div class="field"><label class="lbl">Ruleset / Build</label><input type="text" id="ruleset" placeholder="e.g. v3.0 · 62ddca7"></div>
       <div class="field"><label class="lbl">EB Limit</label><input type="text" id="eb_limit" placeholder="e.g. 150 EB"></div>
     </div>
-    <div class="grid grid-3" style="margin-bottom:14px">
+    <div class="grid grid-3">
       <div class="field"><label class="lbl">Table Size</label><input type="text" id="table_size" placeholder='e.g. 44" × 30"'></div>
       <div class="field"><label class="lbl">Duration (mins)</label><input type="number" id="duration" placeholder="60" min="0"></div>
       <div class="field"><label class="lbl">Street Cred (P1 / P2)</label><input type="text" id="sc" placeholder="e.g. 4 / 4"></div>
-    </div>
-    <div class="grid grid-2">
-      <div class="field">
-        <label class="lbl">Game Type</label>
-        <div class="pill-group">
-          <label class="pill"><input type="radio" name="gtype" value="one-off"> One-off</label>
-          <label class="pill"><input type="radio" name="gtype" value="campaign"> Campaign</label>
-          <label class="pill"><input type="radio" name="gtype" value="tournament"> Tournament</label>
-        </div>
-      </div>
-      <div class="field">
-        <label class="lbl">Tester Experience</label>
-        <div class="pill-group">
-          <label class="pill"><input type="radio" name="texp" value="new"> New</label>
-          <label class="pill"><input type="radio" name="texp" value="casual"> Casual</label>
-          <label class="pill"><input type="radio" name="texp" value="veteran"> Veteran</label>
-          <label class="pill"><input type="radio" name="texp" value="mixed"> Mixed</label>
-        </div>
-      </div>
     </div>
   </div>
 </div>
@@ -381,22 +361,6 @@ tbody input:focus { border-bottom-color: var(--neon-pink); background: rgba(255,
       <option>Player 2</option>
       <option>Draw</option>
     </select>
-  </div>
-  <div class="rb-item" style="min-width:128px">
-    <div class="rb-label">Went First</div>
-    <select id="first_player" style="font-weight:700">
-      <option value="">—</option>
-      <option>Player 1</option>
-      <option>Player 2</option>
-    </select>
-  </div>
-  <div class="rb-item">
-    <div class="rb-label">Final Turn</div>
-    <div class="rb-val"><input type="number" id="final_turn" min="1" placeholder="—"></div>
-  </div>
-  <div class="rb-item">
-    <div class="rb-label">Decided by Turn</div>
-    <div class="rb-val"><input type="number" id="decided_turn" min="1" placeholder="—"></div>
   </div>
   <div class="rb-item">
     <div class="rb-label">Models Left — P1</div>
@@ -463,65 +427,27 @@ tbody input:focus { border-bottom-color: var(--neon-pink); background: rgba(255,
   </div>
 </div>
 
-<!-- ④ TURN LOG -->
+<!-- ② RULES QUERIES -->
 <div class="card">
-  <div class="card-head"><span class="step">04</span><h2>Turn Log</h2><span class="hint">Key events, activations, turning points</span></div>
-  <div class="card-body"><div class="turn-grid" id="turn-grid"></div></div>
+  <div class="card-head"><span class="step">02</span><h2>Rules Queries &amp; Ambiguities</h2><span class="hint">Include page / card refs where possible</span></div>
+  <div class="card-body"><textarea id="rules_queries" placeholder="List any rules questions, ambiguities, or interactions that came up — and how you resolved them. Include card / page refs where you can." style="min-height:140px"></textarea></div>
 </div>
 
-<!-- ⑤ RULES QUERIES -->
+<!-- ③ CARD FEEDBACK -->
 <div class="card">
-  <div class="card-head"><span class="step">05</span><h2>Rules Queries &amp; Ambiguities</h2><span class="hint">Include page / card refs where possible</span></div>
-  <div class="card-body">
-    <div style="display:grid;grid-template-columns:28px 1fr 1fr;gap:12px;padding-bottom:8px;border-bottom:1px solid var(--border);margin-bottom:12px">
-      <span></span>
-      <span style="font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim)">Query (include card / page ref)</span>
-      <span style="font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim)">In-game resolution</span>
-    </div>
-    <div id="query-list"></div>
-  </div>
+  <div class="card-head"><span class="step">03</span><h2>Card &amp; Ability Feedback</h2><span class="hint">Too strong / weak / unclear / broken</span></div>
+  <div class="card-body"><textarea id="card_feedback" placeholder="Note any cards or abilities that felt too strong, too weak, unclear, or broken — and a suggested fix." style="min-height:140px"></textarea></div>
 </div>
 
-<!-- ⑥ CARD FEEDBACK -->
-<div class="card">
-  <div class="card-head"><span class="step">06</span><h2>Card &amp; Ability Feedback</h2><span class="hint">Too strong / weak / unclear / broken</span></div>
-  <div class="card-body">
-    <div class="feedback-wrap">
-      <table>
-        <thead><tr><th class="col-fc">Card / Ability</th><th class="col-fi">Issue Type</th><th class="col-fn">Notes &amp; Suggested Fix</th></tr></thead>
-        <tbody id="feedback-body"></tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-<!-- ⑦ BALANCE -->
-<div class="card">
-  <div class="card-head"><span class="step">07</span><h2>Balance &amp; Game Feel</h2><span class="hint">1 = very poor · 5 = excellent</span></div>
-  <div class="card-body">
-    <div class="ratings-grid" id="ratings-grid"></div>
-    <div class="field" style="margin-top:16px">
-      <label class="lbl">Feel-bad flags — check any that happened this game</label>
-      <div class="pill-group">
-        <label class="pill flag"><input type="checkbox" name="feelbad" value="helpless"> Helpless turn</label>
-        <label class="pill flag"><input type="checkbox" name="feelbad" value="alpha"> Alpha-strike wipe</label>
-        <label class="pill flag"><input type="checkbox" name="feelbad" value="swing"> Unrecoverable swing</label>
-        <label class="pill flag"><input type="checkbox" name="feelbad" value="stall"> Stalled / non-game</label>
-        <label class="pill flag"><input type="checkbox" name="feelbad" value="bookkeep"> Slow bookkeeping</label>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ⑧ CRITICAL -->
+<!-- ④ CRITICAL -->
 <div class="card danger">
-  <div class="card-head"><span class="step">08</span><h2>Critical Issues</h2><span class="hint">Anything that broke the game or needs an immediate fix</span></div>
+  <div class="card-head"><span class="step">04</span><h2>Critical Issues</h2><span class="hint">Anything that broke the game or needs an immediate fix</span></div>
   <div class="card-body"><textarea id="critical" placeholder="Describe any game-breaking interactions, hard rule conflicts, or moments where play had to stop..." style="min-height:90px"></textarea></div>
 </div>
 
-<!-- ⑨ NOTES -->
+<!-- ⑤ NOTES -->
 <div class="card">
-  <div class="card-head"><span class="step">09</span><h2>Additional Notes</h2><span class="hint">Overall impressions, memorable moments, suggestions</span></div>
+  <div class="card-head"><span class="step">05</span><h2>Additional Notes</h2><span class="hint">Overall impressions, memorable moments, suggestions</span></div>
   <div class="card-body"><textarea id="notes" placeholder="Any other feedback for the design team..." style="min-height:100px"></textarea></div>
 </div>
 
@@ -544,75 +470,11 @@ function buildRoster(id) {
 buildRoster('p1_roster');
 buildRoster('p2_roster');
 
-// ── TURN LOG ───────────────────────────────────────────────
-const tg = document.getElementById('turn-grid');
-for (let i = 1; i <= 9; i++) {
-  tg.innerHTML += `
-    <div class="turn-cell">
-      <div class="turn-cell-head"><span class="turn-num">Turn ${i}</span></div>
-      <textarea placeholder="Key activations, attacks, scenario events..."></textarea>
-    </div>`;
-}
-
-// ── QUERIES ────────────────────────────────────────────────
-const ql = document.getElementById('query-list');
-for (let i = 1; i <= 6; i++) {
-  ql.innerHTML += `
-    <div class="query-row">
-      <div class="q-num">${i}</div>
-      <div class="field"><label class="lbl">Query</label><textarea style="min-height:58px" placeholder="Describe the rules question or ambiguity..."></textarea></div>
-      <div class="field"><label class="lbl">Resolution</label><textarea style="min-height:58px" placeholder="How did you resolve it? What ruling was made?"></textarea></div>
-    </div>`;
-}
-
-// ── FEEDBACK ROWS ──────────────────────────────────────────
-const fb = document.getElementById('feedback-body');
-const issues = ['Too Strong','Too Weak','Unclear Wording','Broken Interaction','Missing Rule','Other'];
-for (let i = 0; i < 7; i++) {
-  const opts = issues.map(o => `<option>${o}</option>`).join('');
-  fb.innerHTML += `
-    <tr>
-      <td><input type="text" placeholder="e.g. Sandevistan"></td>
-      <td><select><option value="">— Select —</option>${opts}</select></td>
-      <td><input type="text" placeholder="Describe and suggest a fix..."></td>
-    </tr>`;
-}
-
-// ── RATINGS ────────────────────────────────────────────────
-const rqs = [
-  { id:'r_balance',  q:'Overall team balance (both sides felt fair)' },
-  { id:'r_clarity',  q:'Rules clarity (easy to apply without disputes)' },
-  { id:'r_pacing',   q:'Game pacing (not too slow or too fast)' },
-  { id:'r_fun',      q:'Fun factor (overall enjoyment)' },
-  { id:'r_scenario', q:'Scenario design (objectives felt engaging)' },
-  { id:'r_comeback', q:'Comeback potential (loser could still influence game)' },
-];
-const lbls = ['','Poor','Fair','Good','Great','Excellent'];
-const rg = document.getElementById('ratings-grid');
-rqs.forEach(({id, q}) => {
-  const d = document.createElement('div');
-  d.className = 'rating-card';
-  d.innerHTML = `
-    <div class="rating-q">${q}</div>
-    <div class="star-row" id="${id}">
-      ${[1,2,3,4,5].map(n=>`<div class="star" data-v="${n}" onclick="rate('${id}',${n})">${n}</div>`).join('')}
-      <span class="star-lbl" id="${id}_l"></span>
-    </div>`;
-  rg.appendChild(d);
-});
-function rate(id, v, silent) {
-  document.getElementById(id).querySelectorAll('.star').forEach(s => s.classList.toggle('on', +s.dataset.v <= v));
-  document.getElementById(id+'_l').textContent = '— '+lbls[v];
-  if (!silent) queueSave();
-}
-
 // ── CLEAR ──────────────────────────────────────────────────
 function clearForm() {
   if (!confirm('Clear all fields and wipe the saved copy?')) return;
   document.querySelectorAll('input:not([type=radio]):not([type=checkbox]),select,textarea').forEach(el => { if(el.tagName==='SELECT') el.selectedIndex=0; else el.value=''; });
   document.querySelectorAll('input[type=radio],input[type=checkbox]').forEach(r => r.checked=false);
-  document.querySelectorAll('.star').forEach(s => s.classList.remove('on'));
-  document.querySelectorAll('.star-lbl').forEach(l => l.textContent='');
   try { localStorage.removeItem(SAVE_KEY); } catch(e) {}
   setStatus('Cleared');
 }
@@ -621,17 +483,13 @@ function clearForm() {
 // Persists every field so a refresh / accidental back-swipe can't nuke a
 // half-filled report. Keyed by document order — stable because the form is
 // built deterministically on every load. Bump SAVE_KEY if the layout changes.
-const SAVE_KEY = 'cz_battlereport_v2';
+const SAVE_KEY = 'cz_battlereport_v3';
 const allControls = () => [...document.querySelectorAll('input, select, textarea')];
 
 function saveForm() {
-  const data = { c: {}, ratings: {} };
+  const data = { c: {} };
   allControls().forEach((el, i) => {
     data.c[i] = (el.type === 'radio' || el.type === 'checkbox') ? el.checked : el.value;
-  });
-  rqs.forEach(({ id }) => {
-    const v = document.getElementById(id).querySelectorAll('.star.on').length;
-    if (v) data.ratings[id] = v;
   });
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify(data));
@@ -650,7 +508,6 @@ function restoreForm() {
     if (el.type === 'radio' || el.type === 'checkbox') el.checked = !!val;
     else el.value = val;
   });
-  Object.entries(data.ratings || {}).forEach(([id, v]) => rate(id, +v, true));
   setStatus('Restored saved report');
 }
 
