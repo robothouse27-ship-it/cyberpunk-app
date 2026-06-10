@@ -1899,8 +1899,9 @@ function renderTokenGrid(model, modelIdx) {
 // ===== FIXERS (team-level leader card; 2nd-ed hiring step 1) =====
 function currentFixer() { return (DATA.fixers || []).find(f => f.id === state.fixer) || null; }
 
-// Singularize a hire/keyword token for matching ("Mercs" -> "merc").
-function normKw(s) { return String(s || '').toLowerCase().replace(/s$/, ''); }
+// Normalize a hire/faction/keyword token for matching: drop spaces/punctuation and
+// a trailing plural "s" so "Mercs"->"merc", "Danger Gal"/"dangergals"->"dangergal".
+function normKw(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '').replace(/s$/, ''); }
 
 // Full enforcement: a model is hireable only if one of its keywords matches one
 // of the active Fixer's Hire keywords. No Fixer => no restriction.
@@ -1989,12 +1990,15 @@ function renderLibrary() {
       const factionChars = (DATA.characters && DATA.characters[state.faction]) || [];
       const mercs = DATA.mercs || [];
       const cscope = state.charScope || 'all';
-      // In 'all', the current faction's own mercs already appear in factionChars,
-      // so drop merc entries whose id is already listed to avoid double-listing.
       const factionIds = new Set(factionChars.map(c => c.id));
+      // Per the 2nd-ed rules, a Faction (no Merc keyword of its own) may only hire
+      // mercs that share one of its faction keywords — so the default view shows the
+      // faction roster + only its relevant mercs, not the entire universal merc pool.
+      const facKeys = new Set([normKw(state.faction), normKw((DATA.factions || {})[state.faction] || '')]);
+      const facMercs = mercs.filter(m => (m.keywords || []).some(k => facKeys.has(normKw(k))));
       chars = cscope === 'faction' ? factionChars
-            : cscope === 'mercs'   ? mercs
-            : [...factionChars, ...mercs.filter(m => !factionIds.has(m.id))];
+            : cscope === 'mercs'   ? mercs   // explicit "Mercs" scope = full universal pool
+            : [...factionChars, ...facMercs.filter(m => !factionIds.has(m.id))];
     }
     items = chars.map(c => ({
       id: c.id, name: c.name, cost: c.cost, stars: c.stars||0,
