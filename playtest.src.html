@@ -1112,7 +1112,8 @@ function openCardImage(name, type) {
 }
 
 // ===== HELPERS =====
-const totalEB = () => state.models.reduce((s,m) => s + (m.cost||0) + ((m.fbc&&m.fbc.cost)||0) + (m.gear||[]).reduce((g,x)=>g+(x.cost||0),0), 0);
+const modsEB = (m) => (m.mods||[]).reduce((s,x)=>s+(x.cost||0),0);
+const totalEB = () => state.models.reduce((s,m) => s + (m.cost||0) + ((m.fbc&&m.fbc.cost)||0) + (m.gear||[]).reduce((g,x)=>g+(x.cost||0),0) + modsEB(m), 0);
 const totalStars = () => state.models.reduce((s,m)=>s+(m.stars||0),0);
 
 function getHealthStatus(model) {
@@ -1538,7 +1539,7 @@ function renderStats() {
 }
 
 // Per-model EB (cost + gear) and a type ordering rank for sorting.
-function modelEB(m) { return (m.cost || 0) + (m.gear || []).reduce((s, g) => s + (g.cost || 0), 0); }
+function modelEB(m) { return (m.cost || 0) + (m.gear || []).reduce((s, g) => s + (g.cost || 0), 0) + (m.mods || []).reduce((s, x) => s + (x.cost || 0), 0); }
 function typeRank(m) {
   if (m.isVehicle) return 3;
   if (m.isGonk) return 2;
@@ -1638,6 +1639,20 @@ function renderRoster() {
          </div>`
       : '';
 
+    // Vehicle-only rows: mod loadout (cost counts toward EB) and crew assignment.
+    const modsStr = m.isVehicle
+      ? `<div style="font-size:10px; margin-top:4px; opacity:0.9; color:var(--neon-purple);">
+           Mods (${(m.mods||[]).length}/${(m.modSlots||[]).length}): ${(m.mods||[]).map(x => `${escHtml(x.name)} (${x.cost||0})`).join(', ') || '<span style="opacity:.6;">none</span>'}
+           <button class="mini-btn" data-vmods="${m.uid}" style="font-size:9px; padding:1px 6px; margin-left:4px; color:var(--neon-purple); border-color:var(--neon-purple);">🔧 MODS</button>
+         </div>`
+      : '';
+    const crewStr = m.isVehicle && (m.seats||[]).length
+      ? `<div style="font-size:10px; margin-top:4px; opacity:0.9; color:var(--neon-cyan);">
+           Crew: ${crewSummary(m)}
+           <button class="mini-btn" data-vseats="${m.uid}" style="font-size:9px; padding:1px 6px; margin-left:4px; color:var(--neon-cyan); border-color:var(--neon-cyan);">👥 ASSIGN</button>
+         </div>`
+      : '';
+
     return `
       <div class="model-card" style="border:1px solid var(--border); background:var(--bg-deep); padding:8px; margin-bottom:8px;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
@@ -1656,6 +1671,8 @@ function renderRoster() {
             ${gearStr}
             ${progStr}
             ${fbcStr}
+            ${modsStr}
+            ${crewStr}
           </div>
           <div style="display:flex; flex-direction:column; gap:3px; flex-shrink:0; align-items:flex-end;">
             <div style="display:flex; gap:3px;">${reorderControls(m.uid, pos, order.length)}</div>
@@ -1710,6 +1727,8 @@ function renderRoster() {
       }
     });
   });
+  area.querySelectorAll('[data-vmods]').forEach(b => b.addEventListener('click', () => openVehicleMods(b.dataset.vmods)));
+  area.querySelectorAll('[data-vseats]').forEach(b => b.addEventListener('click', () => openVehicleSeats(b.dataset.vseats)));
   wireKeywordChips(area);
 }
 
@@ -1749,11 +1768,34 @@ function renderPlayMode() {
     const fbcTag = m.fbc
       ? `<span class="play-tag" data-detail="${m.uid}" style="cursor:pointer; display:inline-block; font-size:11px; padding:2px 7px; margin:2px 0 0 3px; border:1px solid var(--neon-pink); color:var(--neon-pink); border-radius:3px;" title="tap for full sheet">${escHtml(m.fbc.name)}</span>${fbcCardBtn}`
       : '';
-    const loadout = (gearTags || progTags || fbcTag)
+    // Vehicle-only Play-mode rows: equipped mods (tap = view card) and crew/seats.
+    const modTags = m.isVehicle ? (m.mods||[]).map(x => {
+      const cardBtn = hasCard(x.name)
+        ? `<button data-card-name="${escHtml(x.name)}" title="view card" style="cursor:pointer; vertical-align:middle; font-size:11px; line-height:1; padding:2px 5px; margin:2px 3px 0 -2px; border:1px solid var(--neon-purple); color:var(--neon-purple); background:transparent; border-radius:3px;">🪪</button>`
+        : '';
+      return `<span class="play-tag" style="display:inline-block; font-size:11px; padding:2px 7px; margin:2px 0 0 3px; border:1px solid var(--neon-purple); color:var(--neon-purple); border-radius:3px;">${escHtml(x.name)}</span>${cardBtn}`;
+    }).join('') : '';
+    const crewLine = m.isVehicle && (m.seats||[]).length
+      ? (m.seats||[]).map((s, i) => {
+          const u = (m.crew||[])[i];
+          const c = u && state.models.find(x => x.uid === u);
+          return `<span style="font-size:11px; opacity:.9;">${escHtml(s)}: <b style="color:${c ? 'var(--neon-cyan)' : 'var(--text-dim)'};">${c ? escHtml(c.name) : '—'}</b></span>`;
+        }).join('<span style="opacity:.4;"> &bull; </span>')
+      : '';
+    const vehicleControls = m.isVehicle
+      ? `<div style="margin-top:6px; display:flex; gap:6px;">
+           <button class="mini-btn" data-vmods="${m.uid}" style="font-size:10px; color:var(--neon-purple); border-color:var(--neon-purple);">🔧 MODS (${(m.mods||[]).length}/${(m.modSlots||[]).length})</button>
+           ${(m.seats||[]).length ? `<button class="mini-btn" data-vseats="${m.uid}" style="font-size:10px; color:var(--neon-cyan); border-color:var(--neon-cyan);">👥 CREW</button>` : ''}
+         </div>`
+      : '';
+    const loadout = (gearTags || progTags || fbcTag || modTags || crewLine || vehicleControls)
       ? `<div class="play-loadout" style="margin-top:6px;">
            ${gearTags ? `<div style="font-size:11px; opacity:0.9; margin-top:2px;">Gear: ${gearTags}</div>` : ''}
            ${progTags ? `<div style="font-size:11px; opacity:0.9; margin-top:2px;">Programs: ${progTags}</div>` : ''}
            ${fbcTag ? `<div style="font-size:11px; opacity:0.9; margin-top:2px;">FBC: ${fbcTag}</div>` : ''}
+           ${modTags ? `<div style="font-size:11px; opacity:0.9; margin-top:2px;">Mods: ${modTags}</div>` : ''}
+           ${crewLine ? `<div style="font-size:11px; opacity:0.9; margin-top:4px;">Crew: ${crewLine}</div>` : ''}
+           ${vehicleControls}
          </div>`
       : '';
     return `
@@ -1812,6 +1854,8 @@ function renderPlayMode() {
   area.querySelectorAll('[data-ko]').forEach(b => b.addEventListener('click', () => toggleKnockedOut(b.dataset.ko)));
   area.querySelectorAll('[data-move-up]').forEach(b => b.addEventListener('click', () => moveModel(b.dataset.moveUp, -1)));
   area.querySelectorAll('[data-move-down]').forEach(b => b.addEventListener('click', () => moveModel(b.dataset.moveDown, 1)));
+  area.querySelectorAll('[data-vmods]').forEach(b => b.addEventListener('click', () => openVehicleMods(b.dataset.vmods)));
+  area.querySelectorAll('[data-vseats]').forEach(b => b.addEventListener('click', () => openVehicleSeats(b.dataset.vseats)));
 
   renderLuck();
 }
@@ -2479,8 +2523,123 @@ function addVehicle(id) {
 
 function removeModel(uid) {
   state.models = state.models.filter(m => m.uid !== uid);
+  // Free any vehicle seat this model was riding in.
+  state.models.forEach(v => {
+    if (v.crew) v.crew = v.crew.map(c => c === uid ? null : c);
+  });
   render();
   saveState();
+}
+
+// ===== VEHICLE MODS & CREW =====
+function findMod(id) { return (DATA.vehicle_mods || []).find(m => m.id === id); }
+function getVehicle(uid) { const m = state.models.find(x => x.uid === uid); return (m && m.isVehicle) ? m : null; }
+
+// Mod-slot editor: equip mods (up to the vehicle's slot count) or remove them.
+function openVehicleMods(uid) {
+  const v = getVehicle(uid);
+  if (!v) return;
+  v.mods = v.mods || [];
+  const slots = (v.modSlots || []).length;
+  const close = () => modal.remove();
+  const row = (mod, equipped) => {
+    const card = hasCard(mod.name)
+      ? `<button data-card-name="${escHtml(mod.name)}" title="view card" style="cursor:pointer; font-size:11px; padding:2px 6px; border:1px solid var(--neon-purple); color:var(--neon-purple); background:transparent; border-radius:3px;">🪪</button>`
+      : '';
+    const btn = equipped
+      ? `<button class="mini-btn" data-unmod="${mod.id}" style="color:var(--neon-red); border-color:var(--neon-red);">REMOVE</button>`
+      : `<button class="mini-btn" data-mod="${mod.id}" ${v.mods.length >= slots ? 'disabled style="opacity:.4;"' : ''}>EQUIP</button>`;
+    return `<div style="display:flex; align-items:center; gap:6px; padding:6px 0; border-bottom:1px solid var(--border);">
+        <div style="flex:1; min-width:0;">
+          <div style="font-weight:bold; font-size:12px;">${escHtml(mod.name)} <span style="color:var(--neon-yellow); font-size:10px;">${mod.cost||0} EB</span></div>
+          <div style="font-size:10px; opacity:.7; margin-top:2px;">${escHtml(mod.description||'')}</div>
+        </div>
+        <div style="display:flex; gap:4px; flex-shrink:0;">${card}${btn}</div>
+      </div>`;
+  };
+  const equippedIds = new Set(v.mods.map(m => m.id));
+  const available = (DATA.vehicle_mods || []).filter(m => !equippedIds.has(m.id));
+  const modal = document.createElement('div');
+  modal.className = 'modal-bg';
+  modal.innerHTML = `
+    <div class="modal sc-modal">
+      <div class="sc-modal-head">
+        <div><h3 style="margin-bottom:2px;">${escHtml(v.name)} — Mods</h3>
+        <div style="font-size:11px; opacity:.7;">Slots used ${v.mods.length}/${slots} • ${(v.modSlots||[]).join(', ')||'no slots'}</div></div>
+        <button class="mini-btn" id="vm-close">✕</button>
+      </div>
+      <div style="max-height:60vh; overflow-y:auto; padding-right:4px;">
+        ${v.mods.length ? '<div style="font-size:10px; opacity:.6; margin:4px 0;">EQUIPPED</div>' + v.mods.map(m => row(m, true)).join('') : ''}
+        <div style="font-size:10px; opacity:.6; margin:8px 0 4px;">AVAILABLE</div>
+        ${available.map(m => row(m, false)).join('') || '<div style="opacity:.5; font-size:11px;">All mods equipped.</div>'}
+      </div>
+    </div>`;
+  modal.addEventListener('click', e => { if (e.target === modal) close(); });
+  modal.querySelector('#vm-close').onclick = close;
+  modal.querySelectorAll('[data-mod]').forEach(b => b.onclick = () => {
+    if (v.mods.length >= slots) { alert('No free mod slots on this vehicle.'); return; }
+    const mod = findMod(b.dataset.mod);
+    if (mod) v.mods.push({ id: mod.id, name: mod.name, cost: mod.cost || 0, description: mod.description || '' });
+    close(); render(); saveState(); openVehicleMods(uid);
+  });
+  modal.querySelectorAll('[data-unmod]').forEach(b => b.onclick = () => {
+    v.mods = v.mods.filter(m => m.id !== b.dataset.unmod);
+    close(); render(); saveState(); openVehicleMods(uid);
+  });
+  modal.querySelectorAll('[data-card-name]').forEach(b =>
+    b.addEventListener('click', e => { e.stopPropagation(); openCardImage(b.dataset.cardName); }));
+  document.getElementById('modal-host').appendChild(modal);
+}
+
+// Crew editor: assign roster Characters into each seat (or leave empty).
+function openVehicleSeats(uid) {
+  const v = getVehicle(uid);
+  if (!v) return;
+  const seats = v.seats || [];
+  v.crew = (v.crew || []).slice(0, seats.length);
+  while (v.crew.length < seats.length) v.crew.push(null);
+  const close = () => modal.remove();
+  // Eligible passengers: roster characters (not vehicles), each seatable once.
+  const chars = state.models.filter(m => !m.isVehicle);
+  const seatRow = (label, i) => {
+    const taken = new Set(v.crew.filter((u, j) => u && j !== i));
+    const opts = ['<option value="">— empty —</option>'].concat(
+      chars.filter(c => !taken.has(c.uid)).map(c =>
+        `<option value="${c.uid}" ${v.crew[i] === c.uid ? 'selected' : ''}>${escHtml(c.name)}</option>`)).join('');
+    return `<div style="display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid var(--border);">
+        <span style="width:74px; font-size:11px; color:var(--neon-cyan); flex-shrink:0;">${escHtml(label)}</span>
+        <select data-seat="${i}" class="field" style="flex:1; font-size:12px;">${opts}</select>
+      </div>`;
+  };
+  const modal = document.createElement('div');
+  modal.className = 'modal-bg';
+  modal.innerHTML = `
+    <div class="modal sc-modal">
+      <div class="sc-modal-head">
+        <div><h3 style="margin-bottom:2px;">${escHtml(v.name)} — Crew</h3>
+        <div style="font-size:11px; opacity:.7;">Assign who's riding</div></div>
+        <button class="mini-btn" id="vs-close">✕</button>
+      </div>
+      <div style="max-height:60vh; overflow-y:auto; padding-right:4px;">
+        ${seats.length ? seats.map((s, i) => seatRow(s, i)).join('') : '<div style="opacity:.5; font-size:11px;">This vehicle has no seats.</div>'}
+      </div>
+    </div>`;
+  modal.addEventListener('click', e => { if (e.target === modal) close(); });
+  modal.querySelector('#vs-close').onclick = close;
+  modal.querySelectorAll('[data-seat]').forEach(sel => sel.onchange = () => {
+    v.crew[parseInt(sel.dataset.seat)] = sel.value || null;
+    render(); saveState(); close(); openVehicleSeats(uid);
+  });
+  document.getElementById('modal-host').appendChild(modal);
+}
+
+// Human-readable crew summary: "Driver: Nat • Seat 1: —"
+function crewSummary(v) {
+  return (v.seats || []).map((s, i) => {
+    const u = (v.crew || [])[i];
+    const c = u && state.models.find(m => m.uid === u);
+    return `${escHtml(s)}: ${c ? escHtml(c.name) : '—'}`;
+  }).join(' • ');
 }
 
 function cycleActionToken(uid, actionId) {
@@ -2890,7 +3049,9 @@ function openTeamLibrary() {
   const fmtDate = ts => ts ? new Date(ts).toLocaleDateString() : '';
   const rows = teams.length ? teams.map(t => {
     const eb = (t.models || []).reduce((s, m) =>
-      s + (m.cost || 0) + (m.gear || []).reduce((g, x) => g + (x.cost || 0), 0), 0);
+      s + (m.cost || 0) + (m.gear || []).reduce((g, x) => g + (x.cost || 0), 0)
+        + (m.mods || []).reduce((g, x) => g + (x.cost || 0), 0)
+        + ((m.fbc && m.fbc.cost) || 0), 0);
     const fac = (DATA.factions && DATA.factions[t.faction]) || t.faction || '';
     return `
       <div style="padding:8px; border:1px solid var(--border); margin-bottom:6px; background:var(--bg-deep);">
