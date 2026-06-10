@@ -308,6 +308,22 @@ select, select option { text-align: center; text-align-last: center; }
   .field label { font-size: 11px; }
 }
 
+/* Drag-to-reorder handle (press & hold the three lines, then drag) */
+.drag-handle {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 30px; min-height: 30px; padding: 0 4px;
+  font-size: 16px; line-height: 1; color: var(--neon-cyan);
+  border: 1px solid var(--border); border-radius: 3px;
+  background: var(--bg-deep); opacity: 0.75;
+  cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none;
+}
+.drag-handle:active { cursor: grabbing; }
+.model-card.dragging, .play-model-card.dragging {
+  opacity: 0.9; box-shadow: 0 0 0 1px var(--neon-cyan), 0 6px 18px rgba(0,0,0,0.6);
+  background: var(--bg-deep);
+}
+.drag-reordering { cursor: grabbing; }
+
 /* Token quick actions */
 .token-actions {
   display: flex; gap: 3px; padding: 8px;
@@ -1561,13 +1577,12 @@ function orderedIndices(koLast) {
   return idx;
 }
 
-// Up/down reorder buttons (only meaningful in custom order). pos is the
-// position within the current display order; total is the display length.
+// Drag-to-reorder handle (only meaningful in custom order). Press & hold the
+// three-line grip, then drag the card up/down to reorder. pos/total are kept
+// for signature compatibility with the call sites.
 function reorderControls(uid, pos, total) {
   if ((state.sortBy || 'custom') !== 'custom') return '';
-  const up = pos > 0 ? `<button class="mini-btn" data-move-up="${uid}" title="move up" style="padding:0 5px;">▲</button>` : '';
-  const down = pos < total - 1 ? `<button class="mini-btn" data-move-down="${uid}" title="move down" style="padding:0 5px;">▼</button>` : '';
-  return up + down;
+  return `<div class="drag-handle" data-drag-handle="${uid}" title="hold &amp; drag to reorder" aria-label="reorder">&#9776;</div>`;
 }
 
 function moveModel(uid, dir) {
@@ -1577,6 +1592,74 @@ function moveModel(uid, dir) {
   [state.models[i], state.models[j]] = [state.models[j], state.models[i]];
   render();
   saveState();
+}
+
+// Press-and-hold drag reordering. Attach to a freshly-rendered list container;
+// works for both the build roster (.model-card) and play list (.play-model-card).
+const CARD_SEL = '.model-card, .play-model-card';
+function wireDragReorder(area) {
+  area.querySelectorAll('[data-drag-handle]').forEach(handle => {
+    handle.addEventListener('pointerdown', e => beginDrag(e, handle, area));
+  });
+}
+
+function beginDrag(e, handle, area) {
+  if (e.button != null && e.button !== 0) return; // left/touch only
+  const card = handle.closest(CARD_SEL);
+  if (!card) return;
+  e.preventDefault();
+  let active = false;
+  // Long-press (180ms) activates the drag, so a quick tap does nothing.
+  const hold = setTimeout(() => {
+    active = true;
+    card.classList.add('dragging');
+    area.classList.add('drag-reordering');
+    if (navigator.vibrate) navigator.vibrate(15);
+  }, 180);
+
+  try { handle.setPointerCapture(e.pointerId); } catch (_) {}
+
+  const onMove = ev => {
+    if (!active) return;
+    ev.preventDefault();
+    const y = ev.clientY;
+    for (const c of area.querySelectorAll(CARD_SEL)) {
+      if (c === card) continue;
+      const r = c.getBoundingClientRect();
+      if (y >= r.top && y <= r.bottom) {
+        if (y < r.top + r.height / 2) area.insertBefore(card, c);
+        else area.insertBefore(card, c.nextSibling);
+        break;
+      }
+    }
+  };
+  const finish = () => {
+    clearTimeout(hold);
+    handle.removeEventListener('pointermove', onMove);
+    handle.removeEventListener('pointerup', finish);
+    handle.removeEventListener('pointercancel', finish);
+    try { handle.releasePointerCapture(e.pointerId); } catch (_) {}
+    area.classList.remove('drag-reordering');
+    if (active) {
+      card.classList.remove('dragging');
+      commitDragOrder(area);
+    }
+  };
+  handle.addEventListener('pointermove', onMove);
+  handle.addEventListener('pointerup', finish);
+  handle.addEventListener('pointercancel', finish);
+}
+
+// Reorder state.models to match the current DOM order of the drag handles.
+function commitDragOrder(area) {
+  const uids = [...area.querySelectorAll('[data-drag-handle]')].map(h => h.dataset.dragHandle);
+  const byUid = new Map(state.models.map(m => [m.uid, m]));
+  const seen = new Set(uids);
+  const reordered = uids.map(u => byUid.get(u)).filter(Boolean);
+  state.models.forEach(m => { if (!seen.has(m.uid)) reordered.push(m); });
+  state.models = reordered;
+  saveState();
+  render();
 }
 
 function toggleKnockedOut(uid) {
@@ -1688,8 +1771,7 @@ function renderRoster() {
   area.querySelectorAll('[data-remove]').forEach(b => {
     b.addEventListener('click', () => removeModel(b.dataset.remove));
   });
-  area.querySelectorAll('[data-move-up]').forEach(b => b.addEventListener('click', () => moveModel(b.dataset.moveUp, -1)));
-  area.querySelectorAll('[data-move-down]').forEach(b => b.addEventListener('click', () => moveModel(b.dataset.moveDown, 1)));
+  wireDragReorder(area);
   area.querySelectorAll('.action-token').forEach(t => {
     t.addEventListener('click', () => cycleActionToken(t.dataset.uid, t.dataset.aid));
   });
@@ -1852,8 +1934,7 @@ function renderPlayMode() {
     b.addEventListener('click', e => { e.stopPropagation(); openCardImage(b.dataset.cardName, b.dataset.cardType); });
   });
   area.querySelectorAll('[data-ko]').forEach(b => b.addEventListener('click', () => toggleKnockedOut(b.dataset.ko)));
-  area.querySelectorAll('[data-move-up]').forEach(b => b.addEventListener('click', () => moveModel(b.dataset.moveUp, -1)));
-  area.querySelectorAll('[data-move-down]').forEach(b => b.addEventListener('click', () => moveModel(b.dataset.moveDown, 1)));
+  wireDragReorder(area);
   area.querySelectorAll('[data-vmods]').forEach(b => b.addEventListener('click', () => openVehicleMods(b.dataset.vmods)));
   area.querySelectorAll('[data-vseats]').forEach(b => b.addEventListener('click', () => openVehicleSeats(b.dataset.vseats)));
 
