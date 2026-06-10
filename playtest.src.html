@@ -315,14 +315,19 @@ select, select option { text-align: center; text-align-last: center; }
   font-size: 16px; line-height: 1; color: var(--neon-cyan);
   border: 1px solid var(--border); border-radius: 3px;
   background: var(--bg-deep); opacity: 0.75;
-  cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none;
+  cursor: grab; touch-action: none;
+  user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
 }
 .drag-handle:active { cursor: grabbing; }
 .model-card.dragging, .play-model-card.dragging {
   opacity: 0.9; box-shadow: 0 0 0 1px var(--neon-cyan), 0 6px 18px rgba(0,0,0,0.6);
   background: var(--bg-deep);
 }
-.drag-reordering { cursor: grabbing; }
+/* While a drag is in progress, stop the whole page from selecting text. */
+body.drag-reordering, body.drag-reordering * {
+  cursor: grabbing !important;
+  user-select: none !important; -webkit-user-select: none !important;
+}
 
 /* Token quick actions */
 .token-actions {
@@ -1594,60 +1599,57 @@ function moveModel(uid, dir) {
   saveState();
 }
 
-// Press-and-hold drag reordering. Attach to a freshly-rendered list container;
-// works for both the build roster (.model-card) and play list (.play-model-card).
+// Drag-to-reorder. Grab the three-line handle and drag the card up/down.
+// Drag activates immediately (the handle is a dedicated grip), move/up are
+// tracked on `document` so it keeps working even when the finger/cursor leaves
+// the handle, and text selection is suppressed for the duration of the drag.
 const CARD_SEL = '.model-card, .play-model-card';
 function wireDragReorder(area) {
   area.querySelectorAll('[data-drag-handle]').forEach(handle => {
     handle.addEventListener('pointerdown', e => beginDrag(e, handle, area));
+    // iOS fires a long-press text-selection/callout off touchstart — kill it.
+    handle.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
   });
 }
 
 function beginDrag(e, handle, area) {
-  if (e.button != null && e.button !== 0) return; // left/touch only
+  if (e.button != null && e.button !== 0) return; // left button / touch only
   const card = handle.closest(CARD_SEL);
   if (!card) return;
   e.preventDefault();
-  let active = false;
-  // Long-press (180ms) activates the drag, so a quick tap does nothing.
-  const hold = setTimeout(() => {
-    active = true;
-    card.classList.add('dragging');
-    area.classList.add('drag-reordering');
-    if (navigator.vibrate) navigator.vibrate(15);
-  }, 180);
+  e.stopPropagation();
 
-  try { handle.setPointerCapture(e.pointerId); } catch (_) {}
+  card.classList.add('dragging');
+  document.body.classList.add('drag-reordering');
+  if (navigator.vibrate) navigator.vibrate(10);
+  let moved = false;
 
   const onMove = ev => {
-    if (!active) return;
-    ev.preventDefault();
-    const y = ev.clientY;
+    const y = ev.clientY != null ? ev.clientY : (ev.touches && ev.touches[0] && ev.touches[0].clientY);
+    if (y == null) return;
+    if (ev.cancelable) ev.preventDefault();
     for (const c of area.querySelectorAll(CARD_SEL)) {
       if (c === card) continue;
       const r = c.getBoundingClientRect();
       if (y >= r.top && y <= r.bottom) {
         if (y < r.top + r.height / 2) area.insertBefore(card, c);
         else area.insertBefore(card, c.nextSibling);
+        moved = true;
         break;
       }
     }
   };
   const finish = () => {
-    clearTimeout(hold);
-    handle.removeEventListener('pointermove', onMove);
-    handle.removeEventListener('pointerup', finish);
-    handle.removeEventListener('pointercancel', finish);
-    try { handle.releasePointerCapture(e.pointerId); } catch (_) {}
-    area.classList.remove('drag-reordering');
-    if (active) {
-      card.classList.remove('dragging');
-      commitDragOrder(area);
-    }
+    document.removeEventListener('pointermove', onMove);
+    document.removeEventListener('pointerup', finish);
+    document.removeEventListener('pointercancel', finish);
+    card.classList.remove('dragging');
+    document.body.classList.remove('drag-reordering');
+    if (moved) commitDragOrder(area);
   };
-  handle.addEventListener('pointermove', onMove);
-  handle.addEventListener('pointerup', finish);
-  handle.addEventListener('pointercancel', finish);
+  document.addEventListener('pointermove', onMove, { passive: false });
+  document.addEventListener('pointerup', finish);
+  document.addEventListener('pointercancel', finish);
 }
 
 // Reorder state.models to match the current DOM order of the drag handles.
