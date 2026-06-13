@@ -3204,7 +3204,9 @@ function openExportChooser() {
       <button class="big-btn" id="ex-file" style="width:100%; margin:8px 0; color:var(--neon-cyan); border-color:var(--neon-cyan);">DOWNLOAD .JSON FILE</button>
       <div style="font-size:10px; opacity:0.6; margin-bottom:10px;">A portable team file you can re-import or share.</div>
       <button class="big-btn" id="ex-text" style="width:100%; margin-bottom:4px;">COPY READABLE LIST</button>
-      <div style="font-size:10px; opacity:0.6;">A plain-text roster summary copied to your clipboard.</div>
+      <div style="font-size:10px; opacity:0.6; margin-bottom:10px;">A plain-text roster summary copied to your clipboard.</div>
+      <button class="big-btn" id="ex-print" style="width:100%; margin-bottom:4px; color:var(--neon-purple); border-color:var(--neon-purple);">🖨️ PRINT SHEETS</button>
+      <div style="font-size:10px; opacity:0.6;">A printable page with each model's stat block plus its card and gear card images.</div>
       <div class="modal-actions"><button class="big-btn secondary" id="ex-done">DONE</button></div>
     </div>`;
   document.getElementById('modal-host').appendChild(modal);
@@ -3214,6 +3216,118 @@ function openExportChooser() {
   modal.querySelector('#ex-done').onclick = close;
   modal.querySelector('#ex-file').onclick = () => { downloadTeam(currentTeamSnapshot()); close(); };
   modal.querySelector('#ex-text').onclick = () => { close(); exportRoster(); };
+  modal.querySelector('#ex-print').onclick = () => { close(); printRoster(); };
+}
+
+// Absolute URL for a card image (works from a separate print window/blob build).
+function cardAbsUrl(name, type) {
+  const slug = resolveCardSlug(name, type);
+  if (!slug) return null;
+  return new URL(assetUrl('cards/' + slug + '.jpg'), document.baseURI).href + '?v=' + CARD_REV;
+}
+
+// Every card image to print for a model: its own character/leader card first,
+// then equipped gear / programs / FBC / vehicle mods that have card art.
+function modelCardRefs(m) {
+  const refs = [];
+  if (hasCard(m.name)) refs.push({ name: m.name, type: '' });
+  (m.gear || []).forEach(g => { if (hasCard(g.name)) refs.push({ name: g.name, type: '' }); });
+  (m.programs || []).forEach(p => { if (hasCard(p.name, 'program')) refs.push({ name: p.name, type: 'program' }); });
+  if (m.fbc && hasCard(m.fbc.name)) refs.push({ name: m.fbc.name, type: '' });
+  (m.mods || []).forEach(x => { if (hasCard(x.name)) refs.push({ name: x.name, type: '' }); });
+  return refs;
+}
+
+// PRINT SHEETS: open a print-optimized page (white, paginated) with a block per
+// model — stat line, loadout text, and the actual card images for the model and
+// all of its gear — then trigger the browser print dialog.
+function printRoster() {
+  const order = orderedIndices(false);
+  const blocks = order.map((mi, pos) => {
+    const m = state.models[mi];
+    const eff = getEffectiveStats(m);
+    const skillsStr = Object.entries(eff.skills).filter(([, v]) => v > 0)
+      .map(([k, v]) => `${k.slice(0, 3).toUpperCase()} ${v}`).join(' • ') || 'no skills';
+    const kw = (m.keywords || []).join(' • ');
+
+    const loadout = [];
+    if (m.gear && m.gear.length) loadout.push(`<div><b>Gear:</b> ${escHtml(m.gear.map(g => g.name + ' (' + g.cost + 'EB)').join(', '))}</div>`);
+    if (m.programs && m.programs.length) loadout.push(`<div><b>Programs:</b> ${escHtml(m.programs.map(p => p.name).join(', '))}</div>`);
+    if (m.fbc) loadout.push(`<div><b>FBC:</b> ${escHtml(m.fbc.name + ' (' + m.fbc.cost + 'EB)')}</div>`);
+    if (m.isVehicle && m.mods && m.mods.length) loadout.push(`<div><b>Mods:</b> ${escHtml(m.mods.map(x => x.name + ' (' + (x.cost || 0) + 'EB)').join(', '))}</div>`);
+    if (m.isVehicle && (m.seats || []).length) loadout.push(`<div><b>Crew:</b> ${escHtml(crewSummary(m))}</div>`);
+    if (m.special) loadout.push(`<div><b>Special:</b> ${escHtml(m.special)}</div>`);
+
+    const cards = modelCardRefs(m).map(r => {
+      const url = cardAbsUrl(r.name, r.type);
+      return `<figure class="card"><img src="${escHtml(url)}" alt="${escHtml(r.name)}"><figcaption>${escHtml(r.name)}</figcaption></figure>`;
+    }).join('');
+
+    return `
+      <section class="unit">
+        <h2>${pos + 1}. ${escHtml(m.name)}${m.isGonk ? ' <span class="tag">GONK</span>' : ''}${m.stars > 0 ? ` <span class="stars">★${m.stars}</span>` : ''}</h2>
+        <div class="stat">${m.cost}EB • ARM ${eff.armor} • ${escHtml(skillsStr)}</div>
+        ${kw ? `<div class="kw">${escHtml(kw)}</div>` : ''}
+        <div class="loadout">${loadout.join('')}</div>
+        ${cards ? `<div class="cards">${cards}</div>` : '<div class="nocards">No card art for this model or its gear.</div>'}
+      </section>`;
+  }).join('');
+
+  const title = (state.teamName || 'Roster');
+  const header = `
+    <header>
+      <h1>${escHtml(title)}</h1>
+      <div class="meta">${escHtml(DATA.factions[state.faction] || state.faction || '')} &nbsp;•&nbsp; ${totalEB()}/${state.budget} EB &nbsp;•&nbsp; Street Cred ${totalStars()}</div>
+    </header>`;
+
+  const doc = `<!DOCTYPE html><html><head><meta charset="utf-8">
+    <title>${escHtml(title)} — Print Sheets</title>
+    <style>
+      * { box-sizing: border-box; }
+      body { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; color: #111; background: #fff; margin: 0; padding: 18px; }
+      header { border-bottom: 2px solid #111; margin-bottom: 14px; padding-bottom: 6px; }
+      h1 { margin: 0; font-size: 22px; letter-spacing: .5px; }
+      .meta { font-size: 12px; color: #444; margin-top: 3px; }
+      .unit { border: 1px solid #bbb; border-radius: 6px; padding: 10px 12px; margin-bottom: 12px; page-break-inside: avoid; }
+      .unit h2 { margin: 0 0 2px; font-size: 16px; }
+      .tag { font-size: 9px; background: #d11; color: #fff; padding: 1px 4px; border-radius: 3px; vertical-align: middle; }
+      .stars { color: #d11; font-size: 12px; }
+      .stat { font-size: 12px; font-weight: 600; color: #222; }
+      .kw { font-size: 11px; color: #666; margin-top: 1px; }
+      .loadout { font-size: 11px; color: #222; margin-top: 6px; line-height: 1.5; }
+      .cards { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+      .card { margin: 0; width: 210px; }
+      .card img { width: 100%; height: auto; border: 1px solid #999; border-radius: 6px; display: block; }
+      .card figcaption { font-size: 10px; color: #555; text-align: center; margin-top: 2px; }
+      .nocards { font-size: 11px; color: #999; font-style: italic; margin-top: 8px; }
+      .toolbar { position: sticky; top: 0; background: #fff; padding-bottom: 10px; margin-bottom: 8px; }
+      .toolbar button { font-size: 13px; padding: 8px 16px; cursor: pointer; }
+      @media print { .toolbar { display: none; } body { padding: 0; } }
+    </style></head>
+    <body>
+      <div class="toolbar"><button onclick="window.print()">🖨️ Print</button></div>
+      ${header}
+      ${blocks || '<p>No models in this roster.</p>'}
+      <script>
+        // Wait for card images to settle before auto-printing so nothing prints blank.
+        (function () {
+          var imgs = Array.prototype.slice.call(document.images);
+          var left = imgs.length;
+          if (!left) { setTimeout(function () { window.print(); }, 200); return; }
+          function done() { if (--left <= 0) setTimeout(function () { window.print(); }, 250); }
+          imgs.forEach(function (im) {
+            if (im.complete) { done(); }
+            else { im.addEventListener('load', done); im.addEventListener('error', done); }
+          });
+        })();
+      <\/script>
+    </body></html>`;
+
+  const w = window.open('', '_blank');
+  if (!w) { alert('Pop-up blocked — allow pop-ups to print roster sheets.'); return; }
+  w.document.open();
+  w.document.write(doc);
+  w.document.close();
 }
 
 function exportRoster() {
