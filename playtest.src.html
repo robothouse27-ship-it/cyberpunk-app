@@ -1891,6 +1891,7 @@ function renderPlayMode() {
             <div class="play-model-type">${m.isGonk ? 'Gonk' : m.isVehicle ? 'Vehicle' : 'Character'}</div>
           </div>
           <div style="display:flex; align-items:center; gap:6px;">
+            ${hasCard(m.name) ? `<button data-card-name="${escHtml(m.name)}" title="view card" style="cursor:pointer; font-size:13px; line-height:1; padding:3px 6px; border:1px solid var(--neon-purple); color:var(--neon-purple); background:transparent; border-radius:3px;">🪪</button>` : ''}
             ${reorderControls(m.uid, pos, order.length)}
             <div class="play-health-badge ${healthStatus}">${healthStatus.toUpperCase().substring(0,1)}</div>
           </div>
