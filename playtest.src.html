@@ -3285,6 +3285,15 @@ function printRoster() {
       return `<figure class="card"><img class="cimg" src="${escHtml(url)}" alt="${escHtml(r.name)}"><figcaption>${escHtml(r.name)}</figcaption></figure>`;
     }).join('');
 
+    // Empty placement slots for the physical action tokens (one per action).
+    const tokCount = (m.actions || []).length;
+    const tokens = tokCount
+      ? `<div class="d-tokens"><div class="tok-label">TOKENS</div><div class="tok-slots">${'<span class="slot"></span>'.repeat(tokCount)}</div></div>`
+      : '';
+    const bottom = (cards || tokens)
+      ? `<div class="d-bottom">${cards ? `<div class="d-cards">${cards}</div>` : '<div></div>'}${tokens}</div>`
+      : '';
+
     return `
       <section class="dossier">
         <div class="d-head">
@@ -3295,7 +3304,7 @@ function printRoster() {
         <div class="d-stat"><b>ARM ${eff.armor}</b> &nbsp;·&nbsp; ${escHtml(skillsStr)}</div>
         ${kw ? `<div class="d-kw">${escHtml(kw)}</div>` : ''}
         <div class="d-load">${loadout.join('') || '<div style="opacity:.5">no loadout</div>'}</div>
-        ${cards ? `<div class="d-cards">${cards}</div>` : ''}
+        ${bottom}
       </section>`;
   };
 
@@ -3347,7 +3356,7 @@ function printRoster() {
           radial-gradient(120% 80% at 50% -10%, color-mix(in srgb, var(--acc) 16%, transparent), transparent 60%),
           #0a0d15;
         border: 1px solid color-mix(in srgb, var(--acc) 45%, #1a2030); border-radius: 6px;
-        padding: 16px; margin: 0 auto 18px; max-width: 1000px; min-height: 1180px; overflow: hidden;
+        padding: 16px; margin: 0 auto 18px; max-width: 1340px; min-height: 720px; overflow: hidden;
         display: flex; flex-direction: column; }
       /* corner brackets */
       .frame { position: absolute; inset: 7px; pointer-events: none; border-radius: 4px; }
@@ -3388,7 +3397,13 @@ function printRoster() {
       .d-load .lk { display: inline-block; min-width: 30px; font-weight: 800; font-size: 8px; letter-spacing: .5px;
         color: var(--acc); opacity: .85; vertical-align: 1px; }
       .d-load .spec { opacity: .8; font-style: italic; }
-      .d-cards { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+      .d-bottom { display: flex; gap: 10px; margin-top: 8px; align-items: flex-start; }
+      .d-cards { display: flex; flex-wrap: wrap; gap: 5px; flex: 1; min-width: 0; }
+      .d-tokens { flex: none; width: 132px; border-left: 1px dashed color-mix(in srgb, var(--acc) 45%, #2c3550); padding-left: 9px; }
+      .tok-label { font-size: 8px; font-weight: 800; letter-spacing: 1px; color: var(--acc); opacity: .85; margin-bottom: 5px; }
+      .tok-slots { display: flex; flex-wrap: wrap; gap: 7px; }
+      .slot { width: 40px; height: 40px; border-radius: 50%; border: 2px dashed color-mix(in srgb, var(--acc) 70%, #2c3550);
+        background: radial-gradient(circle at 50% 38%, rgba(255,255,255,.05), transparent 70%); display: block; }
       .card { margin: 0; width: 66px; }
       .card img { width: 100%; height: auto; border: 1px solid #2c3550; border-radius: 3px; display: block; background: #05070c; }
       .card figcaption { font-size: 7px; line-height: 1.1; opacity: .55; text-align: center; margin-top: 1px;
@@ -3403,7 +3418,7 @@ function printRoster() {
         .page { margin: 0; border: none; border-radius: 0; min-height: 100vh; page-break-after: always; }
         .page:last-child { page-break-after: auto; }
       }
-      @page { size: portrait; margin: 10mm; }
+      @page { size: landscape; margin: 10mm; }
     </style></head>
     <body>
       <div class="bar"><button onclick="window.print()">🖨️ Print</button><span>4 models per page · faction-themed</span></div>
