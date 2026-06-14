@@ -3276,27 +3276,40 @@ function printRoster() {
     return out;
   };
 
-  // One model block: header (name + token slots) then a row of full card images.
+  // One unit module: index rail, header, then the unit + gear cards followed by
+  // an inline "activation" token dock (so the row packs with no wasted gap).
   const unit = (mi, pos) => {
     const m = state.models[mi];
-    const cards = modelCardRefs(m).map(r => {
+    const cards = modelCardRefs(m).map((r, i) => {
       const url = cardAbsUrl(r.name, r.type);
-      return `<figure class="card"><img class="cimg" src="${escHtml(url)}" alt="${escHtml(r.name)}"></figure>`;
+      const isSelf = (i === 0);
+      const tag = isSelf ? (m.isVehicle ? 'VEHICLE' : 'UNIT') : 'GEAR';
+      return `<figure class="card${isSelf ? ' self' : ''}"><span class="c-tag">${tag}</span><img class="cimg" src="${escHtml(url)}" alt="${escHtml(r.name)}"></figure>`;
     }).join('');
     const extras = noArtItems(m).map(n =>
-      `<div class="nocard"><span class="nc-name">${escHtml(n)}</span></div>`).join('');
+      `<div class="nocard"><span class="c-tag">GEAR</span><span class="nc-name">${escHtml(n)}</span></div>`).join('');
     const tokCount = (m.actions || []).length;
-    const tokens = tokCount
-      ? '<span class="slot"></span>'.repeat(tokCount)
-      : '<span class="notok">no action tokens</span>';
+    const socks = tokCount
+      ? Array.from({ length: tokCount }, () => '<span class="sock"></span>').join('')
+      : '<span class="notok">—</span>';
 
     return `
       <section class="unit">
-        <div class="u-head">
-          <div class="u-name"><span class="u-no">${String(pos + 1).padStart(2, '0')}</span> ${escHtml(m.name)}${m.isGonk ? ' <span class="tag">GONK</span>' : ''}${m.stars > 0 ? ` <span class="stars">★${m.stars}</span>` : ''} <span class="u-eb">${m.cost}EB</span></div>
-          <div class="u-tok"><span class="tk-l">TOKENS</span><span class="tk-s">${tokens}</span></div>
+        <div class="u-rail">${String(pos + 1).padStart(2, '0')}</div>
+        <div class="u-main">
+          <div class="u-head">
+            <div class="u-name">${escHtml(m.name)}${m.isGonk ? ' <span class="tag">GONK</span>' : ''}${m.stars > 0 ? ` <span class="stars">★${m.stars}</span>` : ''}</div>
+            <div class="u-eb">${m.cost}<small>EB</small></div>
+          </div>
+          <div class="u-cards">
+            ${cards}${extras}
+            <div class="dock">
+              <div class="dock-l">ACTIVATION</div>
+              <div class="socks">${socks}</div>
+              <div class="legend"><i class="g"></i><i class="y"></i><i class="r"></i></div>
+            </div>
+          </div>
         </div>
-        <div class="u-cards">${cards}${extras}</div>
       </section>`;
   };
 
@@ -3309,74 +3322,129 @@ function printRoster() {
     </div>`;
 
   const doc = `<!DOCTYPE html><html><head><meta charset="utf-8">
-    <title>${escHtml(title)} — ${escHtml(fName)} Cards</title>
+    <title>${escHtml(title)} — ${escHtml(fName)} Datapad</title>
     <style>
-      :root { --acc: ${acc}; --cw: 2.15in; }
+      :root { --acc: ${acc}; --cw: 1.8in; --ink:#dfe7f5; --line: color-mix(in srgb, var(--acc) 40%, #1b2335); }
       * { box-sizing: border-box; }
       html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      body { font-family: "Segoe UI", -apple-system, Roboto, sans-serif; color: #e8ecf5;
-        background: #07090f; margin: 0; padding: 16px; }
-      .bar { position: sticky; top: 0; z-index: 9; background: #07090f; padding: 6px 0 12px;
+      body { font-family: ui-monospace, "SF Mono", "Segoe UI", Roboto, sans-serif; color: var(--ink);
+        margin: 0; padding: 14px;
+        background:
+          repeating-linear-gradient(0deg, rgba(255,255,255,.022) 0 1px, transparent 1px 3px),
+          linear-gradient(120deg, color-mix(in srgb, var(--acc) 7%, transparent), transparent 55%),
+          #05070d; }
+      .bar { position: sticky; top: 0; z-index: 9; background: #05070d; padding: 6px 4px 12px;
         display: flex; gap: 10px; align-items: center; }
-      .bar button { font: 600 13px/1 "Segoe UI", sans-serif; padding: 9px 18px; cursor: pointer;
-        border: 1px solid var(--acc); color: #07090f; background: var(--acc); border-radius: 4px; }
-      .bar span { font-size: 11px; opacity: .55; }
+      .bar button { font: 700 13px/1 ui-monospace, monospace; padding: 9px 18px; cursor: pointer; letter-spacing:1px;
+        border: 1px solid var(--acc); color: #05070d; background: var(--acc); border-radius: 3px; }
+      .bar span { font-size: 11px; opacity: .5; letter-spacing:.5px; }
 
-      header.top { display: flex; gap: 14px; align-items: center;
-        border-bottom: 2px solid color-mix(in srgb, var(--acc) 55%, #1a2030); padding-bottom: 12px; margin-bottom: 14px; }
-      .badge { position: relative; width: 78px; height: 78px; flex: none; border-radius: 6px; overflow: hidden;
+      /* ---- datapad shell ---- */
+      .pad { position: relative; border: 1px solid var(--line); background: rgba(8,11,19,.6);
+        padding: 16px; box-shadow: inset 0 0 60px rgba(0,0,0,.5); }
+      .pad::before, .pad::after, .pad .cb1, .pad .cb2 { content:""; position:absolute; width:18px; height:18px; pointer-events:none; }
+      .pad::before { top:5px; left:5px; border-top:2px solid var(--acc); border-left:2px solid var(--acc); }
+      .pad::after { top:5px; right:5px; border-top:2px solid var(--acc); border-right:2px solid var(--acc); }
+      .pad .cb1 { bottom:5px; left:5px; border-bottom:2px solid var(--acc); border-left:2px solid var(--acc); }
+      .pad .cb2 { bottom:5px; right:5px; border-bottom:2px solid var(--acc); border-right:2px solid var(--acc); }
+
+      .sysbar { display:flex; justify-content:space-between; align-items:center; font-size:10px; letter-spacing:2px;
+        color: var(--acc); opacity:.8; border-bottom:1px solid var(--line); padding-bottom:6px; margin-bottom:12px; }
+      .sysbar .dot { color: var(--acc); }
+
+      header.top { display: flex; gap: 14px; align-items: center; margin-bottom: 14px; }
+      .badge { position: relative; width: 74px; height: 74px; flex: none; border-radius: 4px; overflow: hidden;
         border: 1px solid var(--acc); box-shadow: 0 0 16px color-mix(in srgb, var(--acc) 35%, transparent);
-        display: flex; align-items: center; justify-content: center; background: #05070c; }
-      .badge .mono { font-size: 38px; font-weight: 800; color: var(--acc); }
+        display: flex; align-items: center; justify-content: center; background: #04060b;
+        clip-path: polygon(0 0,100% 0,100% 78%,88% 100%,0 100%); }
+      .badge .mono { font-size: 34px; font-weight: 800; color: var(--acc); }
       .badge .bimg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-      .t-faction { font-size: 23px; font-weight: 800; letter-spacing: 1px; color: var(--acc); text-transform: uppercase; line-height: 1; }
-      .t-team { font-size: 15px; font-weight: 600; margin-top: 4px; color: #fff; }
-      .t-meta { font-size: 11px; letter-spacing: .5px; opacity: .7; margin-top: 3px; }
+      .t-faction { font-size: 24px; font-weight: 800; letter-spacing: 2px; color: var(--acc); text-transform: uppercase; line-height: 1;
+        text-shadow: 0 0 12px color-mix(in srgb, var(--acc) 45%, transparent); }
+      .t-team { font-size: 14px; font-weight: 600; margin-top: 4px; color: #fff; letter-spacing:.5px; }
+      .readouts { display:flex; gap:8px; margin-left:auto; }
+      .ro { border:1px solid var(--line); padding:6px 12px; text-align:center; min-width:74px;
+        background: linear-gradient(180deg, color-mix(in srgb, var(--acc) 9%, transparent), transparent); }
+      .ro b { display:block; font-size:17px; color:var(--acc); }
+      .ro span { font-size:8px; letter-spacing:1.5px; opacity:.6; }
 
-      .unit { border: 1px solid #232a3d; border-left: 4px solid var(--acc); border-radius: 4px;
-        background: linear-gradient(180deg, rgba(255,255,255,.02), transparent 30%), #0c1018;
-        padding: 10px 12px 14px; margin-bottom: 14px; break-inside: avoid; }
-      .u-head { display: flex; justify-content: space-between; align-items: center; gap: 12px;
-        flex-wrap: wrap; margin-bottom: 10px; }
-      .u-name { font-size: 16px; font-weight: 700; color: #fff; }
-      .u-no { color: var(--acc); font-weight: 800; opacity: .8; margin-right: 2px; }
-      .u-eb { font-size: 12px; font-weight: 800; color: var(--acc); margin-left: 6px; }
-      .tag { font-size: 9px; background: #ff2d3a; color: #fff; padding: 1px 4px; border-radius: 2px; vertical-align: middle; font-weight: 700; }
+      /* ---- unit module ---- */
+      .unit { position:relative; display:flex; gap:0; margin-bottom:11px; break-inside: avoid;
+        border:1px solid var(--line);
+        background:
+          linear-gradient(color-mix(in srgb, var(--acc) 6%, transparent) 1px, transparent 1px) 0 0/22px 22px,
+          linear-gradient(90deg, color-mix(in srgb, var(--acc) 6%, transparent) 1px, transparent 1px) 0 0/22px 22px,
+          linear-gradient(180deg, rgba(255,255,255,.018), transparent 26%), #0a0e17;
+        clip-path: polygon(0 0, 100% 0, 100% calc(100% - 11px), calc(100% - 11px) 100%, 0 100%); }
+      .u-rail { flex:none; width:30px; display:flex; align-items:center; justify-content:center;
+        font-size:14px; font-weight:800; color:#05070d; background:var(--acc);
+        writing-mode:vertical-rl; transform:rotate(180deg); letter-spacing:2px; padding:6px 0; }
+      .u-main { flex:1; min-width:0; padding:9px 12px 12px; }
+      .u-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 9px;
+        border-bottom:1px dashed var(--line); padding-bottom:6px; }
+      .u-name { font-size: 15px; font-weight: 700; color: #fff; letter-spacing:.5px; }
+      .u-eb { font-size: 15px; font-weight: 800; color: var(--acc); }
+      .u-eb small { font-size:9px; opacity:.7; }
+      .tag { font-size: 8px; background: #ff2d3a; color: #fff; padding: 1px 4px; border-radius: 2px; vertical-align: middle; font-weight: 700; }
       .stars { color: #ffd21a; font-size: 13px; }
-      .u-tok { display: flex; align-items: center; gap: 9px; }
-      .tk-l { font-size: 9px; font-weight: 800; letter-spacing: 1.5px; color: var(--acc); opacity: .85; }
-      .tk-s { display: flex; gap: 9px; align-items: center; }
-      .slot { width: 0.5in; height: 0.5in; border-radius: 50%;
-        border: 2px dashed color-mix(in srgb, var(--acc) 75%, #2c3550);
-        background: radial-gradient(circle at 50% 38%, rgba(255,255,255,.05), transparent 70%); }
-      .notok { font-size: 10px; opacity: .4; font-style: italic; }
 
-      .u-cards { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; }
-      .card { margin: 0; width: var(--cw); }
-      .card img { width: 100%; height: auto; border-radius: 6px; display: block; background: #05070c;
+      .u-cards { display: flex; flex-wrap: wrap; gap: 9px; align-items: stretch; }
+      .card { position:relative; margin: 0; width: var(--cw); }
+      .card img { width: 100%; height: auto; border-radius: 4px; display: block; background: #04060b;
         border: 1px solid #2c3550; box-shadow: 0 1px 4px rgba(0,0,0,.4); }
-      .nocard { width: var(--cw); min-height: 1.1in; border: 2px dashed color-mix(in srgb, var(--acc) 55%, #2c3550);
-        border-radius: 6px; display: flex; align-items: center; justify-content: center; text-align: center; padding: 8px; }
-      .nc-name { font-size: 13px; font-weight: 600; color: #dbe2f0; }
+      .c-tag { position:absolute; top:4px; left:4px; z-index:2; font-size:7px; font-weight:800; letter-spacing:1px;
+        padding:1px 4px; color:#05070d; background:var(--acc); border-radius:2px; opacity:.92; }
+      .card.self .c-tag { background:#fff; }
+      .nocard { width: var(--cw); min-height: 1.25in; position:relative; border: 2px dashed color-mix(in srgb, var(--acc) 55%, #2c3550);
+        border-radius: 4px; display: flex; align-items: center; justify-content: center; text-align: center; padding: 8px;
+        background: repeating-linear-gradient(135deg, rgba(255,255,255,.02) 0 6px, transparent 6px 12px); }
+      .nc-name { font-size: 12px; font-weight: 600; color: #dbe2f0; letter-spacing:.5px; }
+
+      /* ---- activation token dock ---- */
+      .dock { width: 1.5in; flex:none; margin-left:auto; align-self:stretch; border:1px solid var(--line); border-radius:4px; padding:7px 8px 8px;
+        background: linear-gradient(180deg, color-mix(in srgb, var(--acc) 8%, transparent), rgba(4,6,11,.6));
+        display:flex; flex-direction:column; }
+      .dock-l { font-size:8px; font-weight:800; letter-spacing:2px; color:var(--acc); opacity:.85; margin-bottom:7px; }
+      .socks { display:flex; flex-wrap:wrap; gap:8px; }
+      .sock { width:0.52in; height:0.52in; border-radius:50%; position:relative;
+        border:2px dashed color-mix(in srgb, var(--acc) 70%, #2c3550);
+        background: radial-gradient(circle at 50% 40%, rgba(255,255,255,.06), transparent 68%); }
+      .sock::before { content:""; position:absolute; inset:5px; border-radius:50%; border:1px solid color-mix(in srgb, var(--acc) 30%, transparent); }
+      .notok { font-size:10px; opacity:.4; font-style:italic; }
+      .legend { display:flex; gap:7px; align-items:center; margin-top:auto; padding-top:8px; font-size:7px; letter-spacing:1px; opacity:.7; }
+      .legend i { width:9px; height:9px; border-radius:50%; display:inline-block; }
+      .legend .g { background:#46e36b; } .legend .y { background:#ffd21a; } .legend .r { background:#ff3b3b; }
+      .legend::after { content:"GRN / YEL / RED"; opacity:.7; }
+
       .empty { opacity: .5; padding: 40px; }
+      .foot { margin-top:12px; border-top:1px solid var(--line); padding-top:7px; font-size:8px; letter-spacing:2px; opacity:.4; }
 
       @media print {
-        body { padding: 0 4mm; background: #07090f; }
+        body { padding: 0; }
         .bar { display: none; }
+        .pad { border:none; box-shadow:none; padding:6px; }
       }
-      @page { size: landscape; margin: 9mm; }
+      @page { size: landscape; margin: 8mm; }
     </style></head>
     <body>
-      <div class="bar"><button onclick="window.print()">🖨️ Print</button><span>actual cards + token slots · landscape</span></div>
-      <header class="top">
-        ${badge}
-        <div style="flex:1; min-width:0;">
-          <div class="t-faction">${escHtml(fName)}</div>
-          <div class="t-team">${escHtml(title)}</div>
-          <div class="t-meta">${totalEB()}/${state.budget} EB &nbsp;·&nbsp; ${order.length} MODELS &nbsp;·&nbsp; CRED ${totalStars()}</div>
-        </div>
-      </header>
-      ${unitsHtml}
+      <div class="bar"><button onclick="window.print()">🖨️ Print</button><span>combat datapad · drop your green/yellow/red tokens on the sockets</span></div>
+      <div class="pad"><span class="cb1"></span><span class="cb2"></span>
+        <div class="sysbar"><span><span class="dot">▣</span> COMBAT ZONE // FIELD DATAPAD</span><span>STATUS: DEPLOYED &nbsp;·&nbsp; ${order.length} UNITS ONLINE</span></div>
+        <header class="top">
+          ${badge}
+          <div style="min-width:0;">
+            <div class="t-faction">${escHtml(fName)}</div>
+            <div class="t-team">${escHtml(title)}</div>
+          </div>
+          <div class="readouts">
+            <div class="ro"><b>${totalEB()}</b><span>EB / ${state.budget}</span></div>
+            <div class="ro"><b>${order.length}</b><span>UNITS</span></div>
+            <div class="ro"><b>${totalStars()}</b><span>CRED</span></div>
+          </div>
+        </header>
+        ${unitsHtml}
+        <div class="foot">// END OF MANIFEST &nbsp;·&nbsp; ${escHtml(fName).toUpperCase()} &nbsp;·&nbsp; CYBERPUNK : COMBAT ZONE</div>
+      </div>
       <script>
         // Auto-print once the card art has loaded (banner failures don't block it).
         (function () {
