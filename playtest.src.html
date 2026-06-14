@@ -1830,9 +1830,15 @@ function renderPlayMode() {
     const ko = !!m.knockedOut;
     const eff = getEffectiveStats(m);
     // Readable stat line: effective ARM + every skill the model has.
-    const statLine = '<b style="color:var(--neon-yellow);">ARM ' + eff.armor + '</b>' +
+    let statLine = '<b style="color:var(--neon-yellow);">ARM ' + eff.armor + '</b>' +
       Object.entries(eff.skills).filter(([, v]) => v > 0)
         .map(([k, v]) => ` • ${k.slice(0, 3).toUpperCase()} ${v}`).join('');
+    // Vehicles: surface Hull integrity + keyword chips alongside ARM.
+    if (m.isVehicle) {
+      const intact = (m.hull || []).filter(h => h.currentColor !== 'red').length;
+      const total = (m.hull || []).length;
+      statLine += ` • <b style="color:var(--neon-cyan);">HULL ${intact}/${total}</b>`;
+    }
     // Show the equipped loadout in play mode; tapping an item opens its info popup.
     const gearTags = (m.gear||[]).map(g => {
       const cardBtn = hasCard(g.name)
@@ -1898,6 +1904,7 @@ function renderPlayMode() {
         </div>
         <div class="play-stats" style="font-size:12px; margin:4px 0 2px; opacity:0.95;">${statLine}</div>
         ${renderTokenGrid(m, idx)}
+        ${m.isVehicle ? renderHullGrid(m, idx) : ''}
         ${loadout}
         <div style="margin-top:8px;">
           <button class="mini-btn" data-ko="${m.uid}"
@@ -1917,6 +1924,13 @@ function renderPlayMode() {
       if (state.woundSelectIdx === mi) applyWoundToToken(mi, ai);
       else toggleTokenUsed(mi, ai);
     });
+  });
+  area.querySelectorAll('[data-hull]').forEach(btn => {
+    btn.addEventListener('click', () =>
+      toggleHullToken(parseInt(btn.dataset.hull), parseInt(btn.dataset.hidx)));
+  });
+  area.querySelectorAll('[data-hull-repair]').forEach(btn => {
+    btn.addEventListener('click', () => repairHull(parseInt(btn.dataset.hullRepair)));
   });
   area.querySelectorAll('[data-wound]').forEach(btn => {
     btn.addEventListener('click', () => woundModel(parseInt(btn.dataset.wound)));
@@ -1982,6 +1996,51 @@ function removeLuck() {
     if ((state.luckSpent || 0) > state.luck) state.luckSpent = state.luck;
     renderLuck(); saveState();
   }
+}
+
+// Vehicles track damage on Hull tokens (never spent to act). Each tap toggles a
+// Hull token between intact (its printed color) and damaged (RED).
+function renderHullGrid(model, modelIdx) {
+  if (!model.hull || !model.hull.length) return '';
+  const intact = model.hull.filter(h => h.currentColor !== 'red').length;
+  return `
+    <div class="token-grid">
+      ${model.hull.map((h, hIdx) => {
+        const damaged = h.currentColor === 'red' && h.color !== 'red';
+        return `
+          <div class="token-cell">
+            <button class="token-btn ${h.currentColor} ${damaged ? 'wounded' : ''}"
+              data-hull="${modelIdx}" data-hidx="${hIdx}"
+              title="Hull ${hIdx + 1} — tap to ${damaged ? 'repair' : 'mark damaged'}">
+            </button>
+            <div class="token-label">Hull ${hIdx + 1}</div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+    <div class="token-actions">
+      <span style="font-size:11px; color:var(--text-dim); align-self:center;">
+        ${intact}/${model.hull.length} Hull intact</span>
+      <button class="token-action-btn heal" data-hull-repair="${modelIdx}">REPAIR ALL</button>
+    </div>
+  `;
+}
+
+function toggleHullToken(modelIdx, hullIdx) {
+  const h = state.models[modelIdx]?.hull?.[hullIdx];
+  if (!h) return;
+  // Toggle: damaged (red) <-> intact (printed color).
+  h.currentColor = (h.currentColor === 'red' && h.color !== 'red') ? h.color : 'red';
+  render();
+  saveState();
+}
+
+function repairHull(modelIdx) {
+  const m = state.models[modelIdx];
+  if (!m || !m.hull) return;
+  m.hull.forEach(h => { h.currentColor = h.color; });
+  render();
+  saveState();
 }
 
 function renderTokenGrid(model, modelIdx) {
@@ -3430,9 +3489,15 @@ function printRoster() {
       .foot { margin-top:12px; border-top:1px solid var(--line); padding-top:7px; font-size:8px; letter-spacing:2px; opacity:.4; }
 
       @media print {
-        body { padding: 0; }
+        body { padding: 0;
+          /* Drop the CRT scanline overlay — at print DPI those 1px-every-3px
+             lines rasterize into hard grey/white banding across the page. */
+          background: linear-gradient(120deg, color-mix(in srgb, var(--acc) 7%, transparent), transparent 55%), #05070d; }
         .bar { display: none; }
         .pad { border:none; box-shadow:none; padding:6px; }
+        /* Same reason: the per-unit grid/scan overlays moiré on paper. */
+        .unit { background: #0a0e17; }
+        .nocard { background: #0a0e17; }
       }
       @page { size: landscape; margin: 8mm; }
     </style></head>
