@@ -3324,7 +3324,8 @@ function printRoster() {
   const doc = `<!DOCTYPE html><html><head><meta charset="utf-8">
     <title>${escHtml(title)} — ${escHtml(fName)} Datapad</title>
     <style>
-      :root { --acc: ${acc}; --cw: 1.8in; --ink:#dfe7f5; --line: color-mix(in srgb, var(--acc) 40%, #1b2335); }
+      :root { --acc: ${acc}; --cw: 2.05in; --ink:#dfe7f5; --line: color-mix(in srgb, var(--acc) 40%, #1b2335);
+        --glow: color-mix(in srgb, var(--acc) 45%, transparent); }
       * { box-sizing: border-box; }
       html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       body { font-family: ui-monospace, "SF Mono", "Segoe UI", Roboto, sans-serif; color: var(--ink);
@@ -3340,8 +3341,9 @@ function printRoster() {
       .bar span { font-size: 11px; opacity: .5; letter-spacing:.5px; }
 
       /* ---- datapad shell ---- */
-      .pad { position: relative; border: 1px solid var(--line); background: rgba(8,11,19,.6);
-        padding: 16px; box-shadow: inset 0 0 60px rgba(0,0,0,.5); }
+      .pad { position: relative; border: 1px solid var(--acc); background: rgba(8,11,19,.6);
+        padding: 16px; box-shadow: inset 0 0 60px rgba(0,0,0,.55), 0 0 34px color-mix(in srgb, var(--acc) 20%, transparent),
+          0 0 1px var(--acc); }
       .pad::before, .pad::after, .pad .cb1, .pad .cb2 { content:""; position:absolute; width:18px; height:18px; pointer-events:none; }
       .pad::before { top:5px; left:5px; border-top:2px solid var(--acc); border-left:2px solid var(--acc); }
       .pad::after { top:5px; right:5px; border-top:2px solid var(--acc); border-right:2px solid var(--acc); }
@@ -3363,9 +3365,10 @@ function printRoster() {
         text-shadow: 0 0 12px color-mix(in srgb, var(--acc) 45%, transparent); }
       .t-team { font-size: 14px; font-weight: 600; margin-top: 4px; color: #fff; letter-spacing:.5px; }
       .readouts { display:flex; gap:8px; margin-left:auto; }
-      .ro { border:1px solid var(--line); padding:6px 12px; text-align:center; min-width:74px;
-        background: linear-gradient(180deg, color-mix(in srgb, var(--acc) 9%, transparent), transparent); }
-      .ro b { display:block; font-size:17px; color:var(--acc); }
+      .ro { border:1px solid var(--acc); padding:6px 12px; text-align:center; min-width:74px;
+        background: linear-gradient(180deg, color-mix(in srgb, var(--acc) 12%, transparent), transparent);
+        box-shadow: 0 0 10px color-mix(in srgb, var(--acc) 18%, transparent), inset 0 0 10px rgba(0,0,0,.3); }
+      .ro b { display:block; font-size:17px; color:var(--acc); text-shadow:0 0 8px var(--glow); }
       .ro span { font-size:8px; letter-spacing:1.5px; opacity:.6; }
 
       /* ---- unit module ---- */
@@ -3375,9 +3378,11 @@ function printRoster() {
           linear-gradient(color-mix(in srgb, var(--acc) 6%, transparent) 1px, transparent 1px) 0 0/22px 22px,
           linear-gradient(90deg, color-mix(in srgb, var(--acc) 6%, transparent) 1px, transparent 1px) 0 0/22px 22px,
           linear-gradient(180deg, rgba(255,255,255,.018), transparent 26%), #0a0e17;
+        box-shadow: 0 0 14px color-mix(in srgb, var(--acc) 12%, transparent), inset 0 0 24px rgba(0,0,0,.35);
         clip-path: polygon(0 0, 100% 0, 100% calc(100% - 11px), calc(100% - 11px) 100%, 0 100%); }
       .u-rail { flex:none; width:30px; display:flex; align-items:center; justify-content:center;
         font-size:14px; font-weight:800; color:#05070d; background:var(--acc);
+        box-shadow: 0 0 12px var(--glow); text-shadow:0 0 2px rgba(255,255,255,.4);
         writing-mode:vertical-rl; transform:rotate(180deg); letter-spacing:2px; padding:6px 0; }
       .u-main { flex:1; min-width:0; padding:9px 12px 12px; }
       .u-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 9px;
@@ -3405,16 +3410,21 @@ function printRoster() {
         background: linear-gradient(180deg, color-mix(in srgb, var(--acc) 8%, transparent), rgba(4,6,11,.6));
         display:flex; flex-direction:column; }
       .dock-l { font-size:8px; font-weight:800; letter-spacing:2px; color:var(--acc); opacity:.85; margin-bottom:7px; }
-      .socks { display:flex; flex-wrap:wrap; gap:8px; }
-      .sock { width:0.52in; height:0.52in; border-radius:50%; position:relative;
-        border:2px dashed color-mix(in srgb, var(--acc) 70%, #2c3550);
-        background: radial-gradient(circle at 50% 40%, rgba(255,255,255,.06), transparent 68%); }
-      .sock::before { content:""; position:absolute; inset:5px; border-radius:50%; border:1px solid color-mix(in srgb, var(--acc) 30%, transparent); }
+      .socks { display:flex; flex-wrap:wrap; gap:9px; }
+      /* Each socket is a green/yellow/red ring — drop your activation token in; */
+      /* the faint center cross is where to mark/flip it once the action is used. */
+      .sock { width:0.55in; height:0.55in; border-radius:50%; position:relative;
+        background: conic-gradient(from -90deg, #46e36b 0 33.33%, #ffd21a 33.33% 66.66%, #ff3b3b 66.66% 100%);
+        box-shadow: 0 0 8px color-mix(in srgb, var(--acc) 30%, transparent); }
+      .sock::before { content:""; position:absolute; inset:3px; border-radius:50%; background:#080b13;
+        box-shadow: inset 0 0 7px rgba(0,0,0,.7); }
+      .sock::after { content:"✕"; position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+        font-size:11px; color:color-mix(in srgb, var(--acc) 45%, transparent); opacity:.5; }
       .notok { font-size:10px; opacity:.4; font-style:italic; }
-      .legend { display:flex; gap:7px; align-items:center; margin-top:auto; padding-top:8px; font-size:7px; letter-spacing:1px; opacity:.7; }
-      .legend i { width:9px; height:9px; border-radius:50%; display:inline-block; }
-      .legend .g { background:#46e36b; } .legend .y { background:#ffd21a; } .legend .r { background:#ff3b3b; }
-      .legend::after { content:"GRN / YEL / RED"; opacity:.7; }
+      .legend { display:flex; gap:6px; align-items:center; margin-top:auto; padding-top:8px; font-size:7px; letter-spacing:1px; opacity:.75; }
+      .legend i { width:9px; height:9px; border-radius:50%; display:inline-block; box-shadow:0 0 4px currentColor; }
+      .legend .g { background:#46e36b; color:#46e36b; } .legend .y { background:#ffd21a; color:#ffd21a; } .legend .r { background:#ff3b3b; color:#ff3b3b; }
+      .legend::after { content:"DROP TOKEN · ✕ = USED"; opacity:.7; letter-spacing:.5px; }
 
       .empty { opacity: .5; padding: 40px; }
       .foot { margin-top:12px; border-top:1px solid var(--line); padding-top:7px; font-size:8px; letter-spacing:2px; opacity:.4; }
