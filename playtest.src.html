@@ -621,12 +621,9 @@ body.drag-reordering, body.drag-reordering * {
         </div>
         <div id="fixer-info" style="display:none; margin:0 0 10px; padding:9px 11px; border:1px solid var(--neon-purple); border-radius:8px; background:rgba(160,90,255,0.08); font-size:12px;"></div>
         <div class="field">
-          <label data-i18n="budget">Budget</label>
-          <select id="budget-select">
-            <option value="100" selected>100 EB</option>
-            <option value="150">150 EB</option>
-            <option value="200">200 EB</option>
-          </select>
+          <label data-i18n="budget">Budget (EB)</label>
+          <input type="number" id="budget-select" min="50" step="50" value="100"
+                 inputmode="numeric" title="Type any EB total, or use the arrows to step by 50">
         </div>
         <div class="stats-grid">
           <div class="stat">
@@ -3000,7 +2997,13 @@ function init() {
     if (pf) { state.faction = pf; if (factionSel) factionSel.value = pf; }
     renderFixerInfo(); render(); saveState();
   };
-  const budgetSel = $('budget-select'); if (budgetSel) budgetSel.onchange = e => { state.budget = parseInt(e.target.value); render(); saveState(); };
+  const budgetSel = $('budget-select'); if (budgetSel) budgetSel.onchange = e => {
+    let v = parseInt(e.target.value, 10);
+    if (isNaN(v) || v < 50) v = 50; // ignore blank / nonsense, floor at 50 EB
+    state.budget = v;
+    e.target.value = v; // reflect the clamped value back into the field
+    render(); saveState();
+  };
   const sortSel = $('sort-select'); if (sortSel) { sortSel.value = state.sortBy || 'custom'; sortSel.onchange = e => { state.sortBy = e.target.value; render(); saveState(); }; }
 
   // Library tabs (v3-only)
