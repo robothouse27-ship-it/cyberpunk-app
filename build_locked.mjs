@@ -69,13 +69,15 @@ const wrapper = `<!DOCTYPE html>
     <div class="err" id="err"></div>
   </form>
 <script>
-const SALT=dec64("${b64(salt)}"), IV=dec64("${b64(iv)}"), DATA=dec64("${b64(ct)}"), ITER=${ITER};
+// NB: ciphertext is held in ENC (not DATA) so it can't collide with the app's
+// own top-level "const DATA" when the app is rendered in this same realm.
+const SALT=dec64("${b64(salt)}"), IV=dec64("${b64(iv)}"), ENC=dec64("${b64(ct)}"), ITER=${ITER};
 function dec64(s){const b=atob(s),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u;}
 async function unlock(pw){
   const enc=new TextEncoder();
   const base=await crypto.subtle.importKey("raw",enc.encode(pw),"PBKDF2",false,["deriveKey"]);
   const key=await crypto.subtle.deriveKey({name:"PBKDF2",salt:SALT,iterations:ITER,hash:"SHA-256"},base,{name:"AES-GCM",length:256},false,["decrypt"]);
-  const buf=await crypto.subtle.decrypt({name:"AES-GCM",iv:IV},key,DATA);
+  const buf=await crypto.subtle.decrypt({name:"AES-GCM",iv:IV},key,ENC);
   return new TextDecoder().decode(buf);
 }
 const f=document.getElementById("f"),err=document.getElementById("err"),btn=document.getElementById("btn");
@@ -84,14 +86,18 @@ f.addEventListener("submit",async e=>{
   try{
     let html=await unlock(document.getElementById("pw").value);
     sessionStorage.setItem("cz_pw_ok","1");
-    // The app runs from a blob: URL, where relative paths (e.g. cards/x.png) can't
-    // resolve to the real site. Inject the true base so the app can build absolute
-    // asset URLs from it.
+    // Render the decrypted app IN PLACE, in this same top-level document at the
+    // real site origin. (We used to navigate to a blob: URL, but storage written
+    // in a blob document doesn't reliably persist back to the site origin —
+    // notably on iOS Safari — so rosters were lost on every refresh.) Running at
+    // the real origin means localStorage persists across refreshes like normal.
+    // Inject the true base so relative asset URLs (cards/x.png) resolve.
     var ab=location.href.replace(/[?#].*$/,"").replace(/[^/]*$/,"");
     var inj="<scr"+"ipt>window.__APP_BASE__="+JSON.stringify(ab)+"</scr"+"ipt>";
     html=html.replace("<head>","<head>"+inj);
-    const blob=new Blob([html],{type:"text/html"});
-    location.replace(URL.createObjectURL(blob));
+    document.open();
+    document.write(html);
+    document.close();
   }catch(_){
     err.textContent="Wrong password \\u2014 try again.";
     btn.textContent="Unlock";btn.disabled=false;
