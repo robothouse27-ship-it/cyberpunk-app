@@ -184,6 +184,28 @@ select, select option { text-align: center; text-align-last: center; }
 .skill .v { color: var(--neon-cyan); font-weight: bold; margin-left: 2px; }
 
 .library-list { max-height: 60vh; overflow-y: auto; padding-right: 3px; }
+/* Scrollable card-image gallery (gear / programs / vehicle mods). The card art
+   already prints name + rules, so tiles stay minimal: just a cost/cred badge. */
+.lib-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.lib-card { position: relative; cursor: pointer; border: 1px solid var(--border);
+  border-radius: 6px; overflow: hidden; background: var(--bg-deep);
+  transition: border-color .15s, box-shadow .15s, transform .1s; }
+.lib-card:hover { border-color: var(--neon-cyan); box-shadow: 0 0 12px rgba(5,217,232,.35); transform: translateY(-2px); }
+.lib-card img { display: block; width: 100%; height: auto; }
+.lib-card.equipped { border-color: var(--neon-green); box-shadow: 0 0 12px rgba(57,255,20,.45); }
+.lib-card .lc-cost { position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,.8);
+  color: var(--neon-yellow); font-weight: bold; font-size: 11px; padding: 1px 6px;
+  border-radius: 4px; border: 1px solid var(--neon-yellow); }
+.lib-card .lc-cred { position: absolute; top: 4px; left: 4px; background: rgba(0,0,0,.8);
+  color: var(--neon-cyan); font-size: 10px; padding: 1px 5px; border-radius: 4px; }
+.lib-card .lc-tag { position: absolute; bottom: 4px; left: 4px; background: rgba(0,0,0,.8);
+  font-size: 9px; font-weight: bold; letter-spacing: 1px; padding: 1px 5px; border-radius: 3px; }
+.lib-card .lc-tag.eq { color: var(--neon-green); border: 1px solid var(--neon-green); }
+/* Text fallback tile when a card has no art yet. */
+.lib-card.no-art { padding: 8px; min-height: 92px; display: flex; flex-direction: column; gap: 3px; }
+.lib-card.no-art .na-name { font-weight: bold; font-size: 12px; }
+.lib-card.no-art .na-sub { font-size: 10px; opacity: .6; }
+.lib-card.no-art .na-cost { margin-top: auto; color: var(--neon-yellow); font-weight: bold; font-size: 11px; }
 .library-item {
   border: 1px solid var(--border); background: var(--bg-deep);
   padding: 6px 8px; margin-bottom: 4px; cursor: pointer;
@@ -1087,8 +1109,9 @@ function openSettings() {
 // Prototype: gear/leader cards from CZ_GearCards_Leaders_v4.pdf.
 // Card images extracted from the rulebook PDFs, keyed by a slug of the card NAME
 // (so every rank-tier of a character/gear shares one image). Served from cards/.
-const CARD_SLUGS = new Set(["2nd_chance_medikit", "ablative_loadout", "acid_soaker", "adaptive_digital_agent", "adrenal_pumps", "advanced_shroud", "advanced_targeting_matrix", "adware", "aerial_strike", "agent_assisted_imaging", "agent_in_charge", "air_cannon", "airhypo", "akr_20", "alley_rat", "alpha", "ambush", "anti_air_flak_cannon", "apex", "api_rounds", "arasaka_nauseator", "arasaka_quickstrike_blade", "arm_actuator", "armed_and_dangerous", "assault_rifle", "assertive_badge", "assisted_handling", "authorized_drone_strike", "auto_injector", "autoblade", "automatic_shotgun", "awesome_memes", "baby_face", "backpack_mortar", "balloon_animals", "ban_hammer", "barbed_wire_tire_iron", "barricade_kit", "basic_techtools", "battering_ram", "bengal", "berserker", "berserker_program", "big_black_bag", "big_knucks", "big_top", "bio_toxin", "bio_toxin_shiv", "biomonitor", "biosign_response_kit", "black_lace", "blades", "blammo", "blaze", "block_boss", "blood_pump", "blue_glass", "body_double", "bodyweight_suit", "bombay", "bone_whistle", "boost", "bouncer", "box_launcher", "bozo_bombs", "brain_box", "brainburn_netrunner", "braindance_recorder", "brass_knuckles", "breaching_hammer", "bruiser", "brutalizer", "buffer_zone", "bullet_proof_shield", "burnt_coffee", "butter_bars", "cactus_keychain", "caltrops", "can_o_smash", "can_of_kibble", "captain_murdock", "carjack", "catspaw", "cautious_exec", "centwit", "cereal_killer", "chain_reel", "chainsaw", "chem_grenade", "chipware_socket", "chuckles", "classic_rockerboy", "clearance", "co_pilot", "color_changer", "combat_tech", "comically_oversized_scissors", "comm_scrambler", "concealed_automatic_pistols", "concert_t_shirt", "console_lock", "constitution_cyclone_ssw", "constitution_hurricane_assault_weapon", "cooling_gel", "coordinate_surge", "corporate_credit_card", "cowboy_boots", "crab_drone_control", "crab_lord", "crew_chief", "criminalist", "cripple_wave", "crusher", "cryopump_bags", "custom_highway_master", "cutting_torch", "cyber_enhanced_security", "cyber_jaws", "cyber_legs", "cyber_repair_systems", "cyber_saw", "cyberarm_cyberdeck", "cyberarm_surgical_saw", "cyberarm_techtools", "cyberaudio_suite", "cyberdeck", "cyberleg_shocks", "cybersnake", "daring_tech", "dashboard_hula", "dead_ringers", "death_dealer", "death_mark", "deckkrash", "demolisher", "demon_mask", "dentures_in_an_old_napkin", "designed_to_intimidate_handcannon", "determined_solo", "doc_mittens", "doc_salvage", "door_gunner", "driving_gloves", "drone_bay", "drug_a_thug", "dunce", "dune_chopper", "dusty_datachip", "eagle_eye", "electrified_license_plate", "electrolash_flex_spool", "electronica_rockerboy", "emergency_trauma_pack", "emp_threading", "emr_pilot", "emt_lead", "enhanced_reflexes", "enhanced_targeting", "enviroscanner", "eod_specialist", "eraser", "every_fool_has_his_day", "exec_board_member", "exec_ceo", "exec_director", "exec_manager", "expired_stim_inhaler", "extra_big_bladder", "faisal_s_magna_knuckles", "falsified_info", "field_tacstac", "finale", "finger_microphone", "fiona_hayes", "fixer_arms_dealer", "fixer_hookups", "flak", "flame_thrower", "flashbang_grenade", "flashbulb_cyberhand", "flenser", "flower_gag", "foil_hat_lining", "fool", "forty_mike_mike", "frag_grenade", "gas_can_bomb", "gas_station_loyalty_card", "gauntlet_stunner", "gawd", "giggle_juicer", "glove_overcharger", "glowing_syringe", "glyder", "go_bag", "gokudo_assault_rifle", "gokudo_smg", "gorgon_security_van", "gorilla_arms", "grapple_gun", "grenade_launcher", "grim_grin_grin", "grip_feet", "hackette", "hades_assault_shotgun", "hammerlord", "hard_boiled_detective", "hardened_shielding", "headbanger", "heavy_arasaka_rotating_canon", "heavy_armorjack", "heavy_assault_response_suit", "heavy_pistol", "heavy_smg", "heavy_spanner", "heavy_support_operative", "heavy_weapon_harness", "hellbolt", "hi_stick", "hidey_hole", "hmg", "homemade_crossbow", "homing_beacon", "honey_trap", "hubcap_stash", "hydraulic_cyberarms", "hydraulic_limbs", "hype_gal", "hyper_empathy", "i_am_rubber", "iconoclast_rockerboy", "id_scanner", "illicit_substances", "implanted_antenna", "improvised_armor_plating", "incendiary_rounds", "inconspicuous_hoody", "industrial_tech_supervisor", "inflatable_mallet", "influential_fixer", "instill_rage", "internal_agent", "interns", "intimidating_helmet", "intimidating_sunglasses", "intimidator", "intrepid_media", "ir_goggles", "izzy", "jester", "jonathan_powers", "juice_injector", "jump_booster", "junk_exe", "k_9", "k_9_handler", "kabuto", "katana", "kepler", "kevlar_armor", "kevlar_vest", "kitted_out_tech", "kyodai", "laser_designator", "lead_lined_adult_diaper", "leaping_tyger", "level_damper", "light_armorjack", "light_tattoo", "linked_smgs", "linked_tech", "lizard_skin_boots", "lookout", "lookout_program", "lucky", "lucky_charm", "lucky_skidrow_trench", "luzia_tanzia", "lynx", "m_88_combat_helmet", "mad_hat", "magnetic_shielding", "mark_target", "max", "max_tac_assault", "max_tac_net_ops", "max_tac_suppressor", "maximum_mike", "med_evac_pilot", "med_scanner", "media_drone_control", "media_drone_pilot", "medical_agent", "medicgear_combat_medical_armor", "megaphone", "melted_canteen", "memory_dump", "metal_detector", "metal_surge", "metalgear", "michiko_arasaka", "micro_nuke", "micro_rotors", "midnight_arms_beast", "militech_boomer_buster", "militech_crusher_ssg", "militech_enforcer_full_body_conversion", "militech_fng", "militech_fox_dual_ammo", "militech_mini_gat", "militech_perseus", "militech_ronin_tactical_blade", "militech_sheriff", "militech_special_ops", "militech_spyware", "militech_upgraded_cyberdeck", "militia_operator", "mimic_kimono", "missile_pod", "modular_cyberhand", "molasses_exe", "molotov_cocktail", "monkey_wisdom", "mono_katana", "moonshine_mason_jar", "mounted_hmg", "mounted_microwaver", "mouse", "munitions_specialist", "nail_bat", "nano_regeneration", "nat", "nemo", "nerve_scrub", "nervous_system_overload", "net_armor", "net_suit", "netlinked_targeting", "neural_activator", "neural_enhancers", "neural_linked_netrunner", "neural_override", "neural_reprogrammer", "neural_uplink", "neuroactive_grenade", "night_market_surplus", "nomad_44_lever_action", "nomad_pack", "nomad_s_arsenal", "nomad_scout", "nomad_tech_tools", "nox_arya", "null_response", "obake", "obsessed_paparazzi", "officer", "officer_grunk", "onee_san", "operator", "optical_camo", "organ_grinder", "outdated_road_atlas", "over_under_mr_studd", "overlock", "oyabun", "pack_jacket", "pain_editor", "paladin", "pantera", "paramedic", "personal_arsenal", "pie_grenade", "pledge", "pneumatic_cyber_fist", "point_man", "poison_flatline", "police_sniper", "popup_katana", "power_glove", "powermetal_rockerboy", "prankster", "private_security", "professor_snickers", "program_7", "psycho_hunter", "puppet_master", "ranged_specialist", "ransomware", "rapideploy_sheath", "rattle_cans", "raver", "raw_juice", "rebar_spear", "recon_scout", "reflex_boosters", "reinforced_frame", "relay_nav", "remington_gyro_sniper_rifle", "request_backup", "resourceful_nomad", "responsive_suits", "restovic_wrist_racate", "restraints", "reveler", "ride_a_long", "riot_suppressor", "ripper", "ripper_doc_kit", "rockerboy_drummer", "rockerboy_wailer", "rocket_launcher", "rocket_skates", "ronin_assassin", "ronin_sniper", "rookie", "running_rabbit", "rusted_harmonica", "rusted_machete", "salvaged_armor", "salvaged_machine_gun", "salvaged_mortar", "sandevistan", "sarge", "sat_signal_booster", "scavenged_parts", "scrap_blunderbuss", "scratch_built_custom_face_welder", "scrub", "secsystems_protection_field", "secured_comms", "security", "security_gunner", "security_officer", "see_ya", "sgt_suou", "shaman_s_mancatcher", "shatei", "shattered_optics", "sheisty_of_the_faceless", "shield", "shotgun", "shoulder_mounted_rocket", "showfur", "shredder", "shrieker", "signal_jammer", "silencer", "single_shot_rpg", "skeleton_key", "skimmed_profits", "slamdance_tasmanskiy_klo", "sledgehammer", "sledgehammer_reverse_cybergrip", "sling_some_heavy_rocks", "small_arms_pintle_adapter", "smartlink", "smash", "smash_molotov", "smg", "smoke_grenade", "sniper_rifle", "sokoke", "solo_bodyguard", "solo_noodle_chef", "solo_stalker", "spikey_leathers", "spinning_bowtie_deflector", "sprayskin_reservoir", "spread_out", "steroid_pack", "stims", "stomp_exe", "street_king", "street_ranger", "stress_evaluator", "strobe_sticks", "subdermal_armor", "sudden_reboot", "support_gunner", "suspicious_medkit", "sword", "synthcoke", "tabby", "tactical_analysis_matrix", "tactical_response_officer", "tactical_response_rookie", "tactical_response_specialist", "tag", "take_ya_with_me", "takedown", "tango_down", "tanto", "tattered_nomad_scarf", "team_lead", "technical_specialist", "techtool_cyberhand", "techtronica_microwaver", "tetra", "the_doctor_gag", "the_joke_reverser", "the_last_laugh", "the_strontium_cow", "the_strontium_saddle", "tigress", "timewarp", "title_belt", "tomfool", "too_tall", "tool_hand", "tool_kit", "torso_plating", "tough_as_nails_nomad", "trace_santiago", "trapper", "treasure_seeker", "trojan_alpha", "tsunami_arms_helix", "turbo_charge", "unknowable_jerky", "unstable_power_cell", "vat_grown_muscle", "veronica_stiles", "very_heavy_pistol", "vilane", "viper_smg", "viral_load", "virus_infested_cyberware", "vrizz_bolt", "wakagashira", "warlord", "warm_cola_shot", "warrant", "wastelander", "watch_captain", "well_connected_fixer", "wheelie", "whirly_girl", "wholloper", "whoopee_cushion", "widowmaker", "wild_impulse", "wind_up_bombs", "wingman", "witness_me", "worm", "wrecker", "wyatt_the_kid", "trouble", "spike", "pike", "maul", "baringo"]);
-const CARD_REV = 7;  // bump when card images change (cache-bust)
+const CARD_SLUGS = new Set(["2nd_chance_medikit", "ablative_loadout", "acid_soaker", "adaptive_digital_agent", "adrenal_pumps", "advanced_shroud", "advanced_targeting_matrix", "adware", "aerial_strike", "agent_assisted_imaging", "agent_in_charge", "air_cannon", "airhypo", "akr_20", "alley_rat", "alpha", "ambush", "anti_air_flak_cannon", "apex", "api_rounds", "arasaka_nauseator", "arasaka_quickstrike_blade", "arm_actuator", "armed_and_dangerous", "assault_rifle", "assertive_badge", "assisted_handling", "authorized_drone_strike", "auto_injector", "autoblade", "automatic_shotgun", "awesome_memes", "baby_face", "backpack_mortar", "balloon_animals", "ban_hammer", "barbed_wire_tire_iron", "barricade_kit", "basic_techtools", "battering_ram", "bengal", "berserker", "berserker_program", "big_black_bag", "big_knucks", "big_top", "bio_toxin", "bio_toxin_shiv", "biomonitor", "biosign_response_kit", "black_lace", "blades", "blammo", "blaze", "block_boss", "blood_pump", "blue_glass", "body_double", "bodyweight_suit", "bombay", "bone_whistle", "boost", "bouncer", "box_launcher", "bozo_bombs", "brain_box", "brainburn_netrunner", "braindance_recorder", "brass_knuckles", "breaching_hammer", "bruiser", "brutalizer", "buffer_zone", "bullet_proof_shield", "burnt_coffee", "butter_bars", "cactus_keychain", "caltrops", "can_o_smash", "can_of_kibble", "captain_murdock", "carjack", "catspaw", "cautious_exec", "centwit", "cereal_killer", "chain_reel", "chainsaw", "chem_grenade", "chipware_socket", "chuckles", "classic_rockerboy", "clearance", "co_pilot", "color_changer", "combat_tech", "comically_oversized_scissors", "comm_scrambler", "concealed_automatic_pistols", "concert_t_shirt", "console_lock", "constitution_cyclone_ssw", "constitution_hurricane_assault_weapon", "cooling_gel", "coordinate_surge", "corporate_credit_card", "cowboy_boots", "crab_drone_control", "crab_lord", "crew_chief", "criminalist", "cripple_wave", "crusher", "cryopump_bags", "custom_highway_master", "cutting_torch", "cyber_enhanced_security", "cyber_jaws", "cyber_legs", "cyber_repair_systems", "cyber_saw", "cyberarm_cyberdeck", "cyberarm_surgical_saw", "cyberarm_techtools", "cyberaudio_suite", "cyberdeck", "cyberleg_shocks", "cybersnake", "daring_tech", "dashboard_hula", "dead_ringers", "death_dealer", "death_mark", "deckkrash", "demolisher", "demon_mask", "dentures_in_an_old_napkin", "designed_to_intimidate_handcannon", "determined_solo", "doc_mittens", "doc_salvage", "door_gunner", "driving_gloves", "drone_bay", "drug_a_thug", "dunce", "dune_chopper", "dusty_datachip", "eagle_eye", "electrified_license_plate", "electrolash_flex_spool", "electronica_rockerboy", "emergency_trauma_pack", "emp_threading", "emr_pilot", "emt_lead", "enhanced_reflexes", "enhanced_targeting", "enviroscanner", "eod_specialist", "eraser", "every_fool_has_his_day", "exec_board_member", "exec_ceo", "exec_director", "exec_manager", "expired_stim_inhaler", "extra_big_bladder", "faisal_s_magna_knuckles", "falsified_info", "field_tacstac", "finale", "finger_microphone", "fiona_hayes", "fixer_arms_dealer", "fixer_hookups", "flak", "flame_thrower", "flashbang_grenade", "flashbulb_cyberhand", "flenser", "flower_gag", "foil_hat_lining", "fool", "forty_mike_mike", "frag_grenade", "gas_can_bomb", "gas_station_loyalty_card", "gauntlet_stunner", "gawd", "giggle_juicer", "glove_overcharger", "glowing_syringe", "glyder", "go_bag", "gokudo_assault_rifle", "gokudo_smg", "gorgon_security_van", "gorilla_arms", "grapple_gun", "grenade_launcher", "grim_grin_grin", "grip_feet", "hackette", "hades_assault_shotgun", "hammerlord", "hard_boiled_detective", "hardened_shielding", "headbanger", "heavy_arasaka_rotating_canon", "heavy_armorjack", "heavy_assault_response_suit", "heavy_pistol", "heavy_smg", "heavy_spanner", "heavy_support_operative", "heavy_weapon_harness", "hellbolt", "hi_stick", "hidey_hole", "hmg", "homemade_crossbow", "homing_beacon", "honey_trap", "hubcap_stash", "hydraulic_cyberarms", "hydraulic_limbs", "hype_gal", "hyper_empathy", "i_am_rubber", "iconoclast_rockerboy", "id_scanner", "illicit_substances", "implanted_antenna", "improvised_armor_plating", "incendiary_rounds", "inconspicuous_hoody", "industrial_tech_supervisor", "inflatable_mallet", "influential_fixer", "instill_rage", "internal_agent", "interns", "intimidating_helmet", "intimidating_sunglasses", "intimidator", "intrepid_media", "ir_goggles", "izzy", "jester", "jonathan_powers", "juice_injector", "jump_booster", "junk_exe", "k_9", "k_9_handler", "kabuto", "katana", "kepler", "kevlar_armor", "kevlar_vest", "kitted_out_tech", "kyodai", "laser_designator", "lead_lined_adult_diaper", "leaping_tyger", "level_damper", "light_armorjack", "light_tattoo", "linked_smgs", "linked_tech", "lizard_skin_boots", "lookout", "lookout_program", "lucky", "lucky_charm", "lucky_skidrow_trench", "luzia_tanzia", "lynx", "m_88_combat_helmet", "mad_hat", "magnetic_shielding", "mark_target", "max", "max_tac_assault", "max_tac_net_ops", "max_tac_suppressor", "maximum_mike", "med_evac_pilot", "med_scanner", "media_drone_control", "media_drone_pilot", "medical_agent", "medicgear_combat_medical_armor", "megaphone", "melted_canteen", "memory_dump", "metal_detector", "metal_surge", "metalgear", "michiko_arasaka", "micro_nuke", "micro_rotors", "midnight_arms_beast", "militech_boomer_buster", "militech_crusher_ssg", "militech_enforcer_full_body_conversion", "militech_fng", "militech_fox_dual_ammo", "militech_mini_gat", "militech_perseus", "militech_ronin_tactical_blade", "militech_sheriff", "militech_special_ops", "militech_spyware", "militech_upgraded_cyberdeck", "militia_operator", "mimic_kimono", "missile_pod", "modular_cyberhand", "molasses_exe", "molotov_cocktail", "monkey_wisdom", "mono_katana", "moonshine_mason_jar", "mounted_hmg", "mounted_microwaver", "mouse", "munitions_specialist", "nail_bat", "nano_regeneration", "nat", "nemo", "nerve_scrub", "nervous_system_overload", "net_armor", "net_suit", "netlinked_targeting", "neural_activator", "neural_enhancers", "neural_linked_netrunner", "neural_override", "neural_reprogrammer", "neural_uplink", "neuroactive_grenade", "night_market_surplus", "nomad_44_lever_action", "nomad_pack", "nomad_s_arsenal", "nomad_scout", "nomad_tech_tools", "nox_arya", "null_response", "obake", "obsessed_paparazzi", "officer", "officer_grunk", "onee_san", "operator", "optical_camo", "organ_grinder", "outdated_road_atlas", "over_under_mr_studd", "overlock", "oyabun", "pack_jacket", "pain_editor", "paladin", "pantera", "paramedic", "personal_arsenal", "pie_grenade", "pledge", "pneumatic_cyber_fist", "point_man", "poison_flatline", "police_sniper", "popup_katana", "power_glove", "powermetal_rockerboy", "prankster", "private_security", "professor_snickers", "program_7", "psycho_hunter", "puppet_master", "ranged_specialist", "ransomware", "rapideploy_sheath", "rattle_cans", "raver", "raw_juice", "rebar_spear", "recon_scout", "reflex_boosters", "reinforced_frame", "relay_nav", "remington_gyro_sniper_rifle", "request_backup", "resourceful_nomad", "responsive_suits", "restovic_wrist_racate", "restraints", "reveler", "ride_a_long", "riot_suppressor", "ripper", "ripper_doc_kit", "rockerboy_drummer", "rockerboy_wailer", "rocket_launcher", "rocket_skates", "ronin_assassin", "ronin_sniper", "rookie", "running_rabbit", "rusted_harmonica", "rusted_machete", "salvaged_armor", "salvaged_machine_gun", "salvaged_mortar", "sandevistan", "sarge", "sat_signal_booster", "scavenged_parts", "scrap_blunderbuss", "scratch_built_custom_face_welder", "scrub", "secsystems_protection_field", "secured_comms", "security", "security_gunner", "security_officer", "see_ya", "sgt_suou", "shaman_s_mancatcher", "shatei", "shattered_optics", "sheisty_of_the_faceless", "shield", "shotgun", "shoulder_mounted_rocket", "showfur", "shredder", "shrieker", "signal_jammer", "silencer", "single_shot_rpg", "skeleton_key", "skimmed_profits", "slamdance_tasmanskiy_klo", "sledgehammer", "sledgehammer_reverse_cybergrip", "sling_some_heavy_rocks", "small_arms_pintle_adapter", "smartlink", "smash", "smash_molotov", "smg", "smoke_grenade", "sniper_rifle", "sokoke", "solo_bodyguard", "solo_noodle_chef", "solo_stalker", "spikey_leathers", "spinning_bowtie_deflector", "sprayskin_reservoir", "spread_out", "steroid_pack", "stims", "stomp_exe", "street_king", "street_ranger", "stress_evaluator", "strobe_sticks", "subdermal_armor", "sudden_reboot", "support_gunner", "suspicious_medkit", "sword", "synthcoke", "tabby", "tactical_analysis_matrix", "tactical_response_officer", "tactical_response_rookie", "tactical_response_specialist", "tag", "take_ya_with_me", "takedown", "tango_down", "tanto", "tattered_nomad_scarf", "team_lead", "technical_specialist", "techtool_cyberhand", "techtronica_microwaver", "tetra", "the_doctor_gag", "the_joke_reverser", "the_last_laugh", "the_strontium_cow", "the_strontium_saddle", "tigress", "timewarp", "title_belt", "tomfool", "too_tall", "tool_hand", "tool_kit", "torso_plating", "tough_as_nails_nomad", "trace_santiago", "trapper", "treasure_seeker", "trojan_alpha", "tsunami_arms_helix", "turbo_charge", "unknowable_jerky", "unstable_power_cell", "vat_grown_muscle", "veronica_stiles", "very_heavy_pistol", "vilane", "viper_smg", "viral_load", "virus_infested_cyberware", "vrizz_bolt", "wakagashira", "warlord", "warm_cola_shot", "warrant", "wastelander", "watch_captain", "well_connected_fixer", "wheelie", "whirly_girl", "wholloper", "whoopee_cushion", "widowmaker", "wild_impulse", "wind_up_bombs", "wingman", "witness_me", "worm", "wrecker", "wyatt_the_kid", "trouble", "spike", "pike", "maul", "baringo",
+"fuel_injector","turbo_charge","assisted_handling","off_road_ready","cybernetic_control_system","ablative_plating","reinforced_frame","drone_bay","sat_signal_booster","clown_car","mounted_smg","mounted_car_cannon","mounted_heavy_smg","pop_out_katanas","mounted_flame_thrower","mounted_microwaver","mounted_rotating_cannon"]);
+const CARD_REV = 8;  // bump when card images change (cache-bust)
 function cardSlug(name) { return (name || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, ''); }
 // Some names collide across types (e.g. a character AND a program named "Berserker").
 // Type-qualified slugs like "berserker_program" win when a type is given.
@@ -1580,20 +1603,11 @@ function orderedIndices(koLast) {
 }
 
 // Drag-to-reorder handle (only meaningful in custom order). Press & hold the
-// three-line grip, then drag the card up/down to reorder. pos/total are kept
-// for signature compatibility with the call sites.
-function reorderControls(uid, pos, total) {
+// three-line grip, then drag the card up/down to reorder. Call sites pass
+// (uid, pos, total); pos/total are unused here but kept at the call sites.
+function reorderControls(uid) {
   if ((state.sortBy || 'custom') !== 'custom') return '';
   return `<div class="drag-handle" data-drag-handle="${uid}" title="hold &amp; drag to reorder" aria-label="reorder">&#9776;</div>`;
-}
-
-function moveModel(uid, dir) {
-  const i = state.models.findIndex(x => x.uid === uid);
-  const j = i + dir;
-  if (i < 0 || j < 0 || j >= state.models.length) return;
-  [state.models[i], state.models[j]] = [state.models[j], state.models[i]];
-  render();
-  saveState();
 }
 
 // Drag-to-reorder. Grab the three-line handle and drag the card up/down.
@@ -1739,7 +1753,7 @@ function renderRoster() {
       <div class="model-card" style="border:1px solid var(--border); background:var(--bg-deep); padding:8px; margin-bottom:8px;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
           <div style="flex:1; min-width:0;">
-            <div style="font-weight:bold; color:var(--neon-cyan); font-size:13px;">
+            <div data-detail="${m.uid}" title="tap for full sheet" style="font-weight:bold; color:var(--neon-cyan); font-size:13px; cursor:pointer;">
               ${m.name} ${m.isGonk ? '<span style="font-size:9px;color:var(--neon-pink);">GONK</span>' : ''} ${m.stars>0?`<span style="color:var(--neon-pink); font-size:10px;">★${m.stars}</span>`:''}
             </div>
             <div style="font-size:10px; opacity:0.6; margin-top:1px;">${keywordsStr}</div>
@@ -1769,6 +1783,9 @@ function renderRoster() {
   // Wire interactions
   area.querySelectorAll('[data-remove]').forEach(b => {
     b.addEventListener('click', () => removeModel(b.dataset.remove));
+  });
+  area.querySelectorAll('[data-detail]').forEach(el => {
+    el.addEventListener('click', () => openModelDetail(el.dataset.detail));
   });
   wireDragReorder(area);
   area.querySelectorAll('.action-token').forEach(t => {
@@ -2043,21 +2060,11 @@ function repairHull(modelIdx) {
 function renderTokenGrid(model, modelIdx) {
   if (model.isGonk || model.isVehicle || !model.actions) return '';
 
-  const colorSymbol = (color) => {
-    switch(color) {
-      case 'green': return 'd12';
-      case 'yellow': return 'd8';
-      case 'red': return 'd6';
-      default: return '?';
-    }
-  };
-
   const inWound = state.woundSelectIdx === modelIdx;
 
   return `
     <div class="token-grid">
       ${model.actions.map((action, aIdx) => {
-        const symbol = action.isUsed ? '·' : colorSymbol(action.currentColor);
         const isWounded = action.currentColor === 'red' && action.color !== 'red';
         const canWound = inWound && action.currentColor !== 'red';
         return `
@@ -2128,6 +2135,28 @@ function renderFixerInfo() {
   // The [data-card] delegation only covers modal-host, so wire this button directly.
   const cardBtn = box.querySelector('[data-card]');
   if (cardBtn) cardBtn.onclick = e => { e.stopPropagation(); openCardImage(cardBtn.dataset.card, cardBtn.dataset.cardType); };
+}
+
+// One tile in a card-image gallery. Uses the real card art when available,
+// otherwise a compact text fallback. `extras.equipped` highlights mod tiles.
+function libCardTile(it, type, extras) {
+  extras = extras || {};
+  const url = cardAbsUrl(it.name, type);
+  const cost = it.cost ? `<span class="lc-cost">${it.cost} EB</span>` : '';
+  const cred = it.cred ? `<span class="lc-cred">⊕${it.cred}</span>` : '';
+  const eqTag = extras.equipped ? '<span class="lc-tag eq">EQUIPPED</span>' : '';
+  const cls = 'lib-card' + (extras.equipped ? ' equipped' : '');
+  const attrs = `data-id="${escHtml(String(it.id))}" data-cat="${it.cat}"`;
+  if (url) {
+    return `<div class="${cls}" ${attrs}>`
+      + `<img loading="lazy" src="${url}" alt="${escHtml(it.name)}">`
+      + `${cost}${cred}${eqTag}</div>`;
+  }
+  return `<div class="${cls} no-art" ${attrs}>`
+    + `<div class="na-name">${escHtml(it.name)}</div>`
+    + (it.sub ? `<div class="na-sub">${escHtml(it.sub)}</div>` : '')
+    + `<div class="na-cost">${it.cost ? it.cost + ' EB' : ''}${extras.equipped ? ' • EQUIPPED' : ''}</div>`
+    + `</div>`;
 }
 
 function renderLibrary() {
@@ -2252,6 +2281,17 @@ function renderLibrary() {
     return;
   }
 
+  // Gear & Programs render as a scrollable gallery of the actual card images
+  // instead of text rows; tapping a card opens its detail/equip popup.
+  if (tab === 'gear' || tab === 'prog') {
+    list.innerHTML = '<div class="lib-cards">' + items.map(it => libCardTile(it, it.cat === 'prog' ? 'program' : '')).join('') + '</div>';
+    list.querySelectorAll('.lib-card').forEach(el => el.addEventListener('click', () => {
+      if (el.dataset.cat === 'gear') openGear(el.dataset.id);
+      else openProgram(el.dataset.id);
+    }));
+    return;
+  }
+
   list.innerHTML = rulesBtn + items.map(it => {
     const costLabel = it.cat === 'char' || it.cat === 'gear' || it.cat === 'vehicle' || it.cat === 'fbc'
       ? `<span style="color:var(--neon-yellow); font-weight:bold;">${it.cost} EB</span>`
@@ -2266,11 +2306,16 @@ function renderLibrary() {
     const subHtml = it.cat === 'vehicle'
       ? kwChips(it.keywords)
       : (it.sub ? escHtml(it.sub) : '');
+    // Character rows get a VIEW CARD button (when a card image exists) so the
+    // card can be previewed in build mode without adding the model.
+    const cardBtn = it.cat === 'char' && hasCard(it.name)
+      ? `<button class="mini-btn" data-card-name="${escHtml(it.name)}" title="view card" style="color:var(--neon-purple); border-color:var(--neon-purple); font-size:9px; padding:1px 6px;">🪪</button>`
+      : '';
     return `
       <div class="lib-item" data-id="${it.id}" data-cat="${it.cat}" style="cursor:pointer; padding:6px; border:1px solid var(--border); margin-bottom:4px; background:var(--bg-deep);">
         <div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">
           <span style="font-weight:bold; font-size:12px;">${it.name}${gonkBadge}</span>
-          <span style="display:flex; gap:6px; align-items:center;">${starLabel} ${credLabel} ${costLabel}</span>
+          <span style="display:flex; gap:6px; align-items:center;">${cardBtn} ${starLabel} ${credLabel} ${costLabel}</span>
         </div>
         ${subHtml ? `<div style="font-size:10px; opacity:0.6; margin-top:2px;">${subHtml}</div>` : ''}
       </div>
@@ -2279,7 +2324,9 @@ function renderLibrary() {
 
   // Wire up clicks
   list.querySelectorAll('.lib-item').forEach(el => {
-    el.addEventListener('click', () => {
+    el.addEventListener('click', e => {
+      // Tapping the VIEW CARD button previews the card; don't also add the model.
+      if (e.target.closest('[data-card-name]')) return;
       const id = el.dataset.id;
       const cat = el.dataset.cat;
       if (cat === 'char') addModel(id);
@@ -2289,6 +2336,10 @@ function renderLibrary() {
       else if (cat === 'fbc') openFBC(id);
     });
   });
+  list.querySelectorAll('[data-card-name]').forEach(b => b.addEventListener('click', e => {
+    e.stopPropagation();
+    openCardImage(b.dataset.cardName);
+  }));
   wireLibraryRules(list);
 }
 
@@ -2685,21 +2736,10 @@ function openVehicleMods(uid) {
   v.mods = v.mods || [];
   const slots = (v.modSlots || []).length;
   const close = () => modal.remove();
-  const row = (mod, equipped) => {
-    const card = hasCard(mod.name)
-      ? `<button data-card-name="${escHtml(mod.name)}" title="view card" style="cursor:pointer; font-size:11px; padding:2px 6px; border:1px solid var(--neon-purple); color:var(--neon-purple); background:transparent; border-radius:3px;">🪪</button>`
-      : '';
-    const btn = equipped
-      ? `<button class="mini-btn" data-unmod="${mod.id}" style="color:var(--neon-red); border-color:var(--neon-red);">REMOVE</button>`
-      : `<button class="mini-btn" data-mod="${mod.id}" ${v.mods.length >= slots ? 'disabled style="opacity:.4;"' : ''}>EQUIP</button>`;
-    return `<div style="display:flex; align-items:center; gap:6px; padding:6px 0; border-bottom:1px solid var(--border);">
-        <div style="flex:1; min-width:0;">
-          <div style="font-weight:bold; font-size:12px;">${escHtml(mod.name)} <span style="color:var(--neon-yellow); font-size:10px;">${mod.cost||0} EB</span></div>
-          <div style="font-size:10px; opacity:.7; margin-top:2px;">${escHtml(mod.description||'')}</div>
-        </div>
-        <div style="display:flex; gap:4px; flex-shrink:0;">${card}${btn}</div>
-      </div>`;
-  };
+  // Mods show as card-image tiles (tap to equip / remove), like the gear gallery.
+  const tile = (mod, equipped) =>
+    libCardTile({ id: mod.id, name: mod.name, cost: mod.cost || 0, cat: 'mod' }, '', { equipped });
+  const full = v.mods.length >= slots;
   const equippedIds = new Set(v.mods.map(m => m.id));
   const available = (DATA.vehicle_mods || []).filter(m => !equippedIds.has(m.id));
   const modal = document.createElement('div');
@@ -2712,25 +2752,28 @@ function openVehicleMods(uid) {
         <button class="mini-btn" id="vm-close">✕</button>
       </div>
       <div style="max-height:60vh; overflow-y:auto; padding-right:4px;">
-        ${v.mods.length ? '<div style="font-size:10px; opacity:.6; margin:4px 0;">EQUIPPED</div>' + v.mods.map(m => row(m, true)).join('') : ''}
-        <div style="font-size:10px; opacity:.6; margin:8px 0 4px;">AVAILABLE</div>
-        ${available.map(m => row(m, false)).join('') || '<div style="opacity:.5; font-size:11px;">All mods equipped.</div>'}
+        ${v.mods.length ? '<div style="font-size:10px; opacity:.6; margin:4px 0;">EQUIPPED — tap to remove</div>'
+          + '<div class="lib-cards" id="vm-equipped">' + v.mods.map(m => tile(m, true)).join('') + '</div>' : ''}
+        <div style="font-size:10px; opacity:.6; margin:8px 0 4px;">AVAILABLE${full ? ' — all slots full' : ' — tap to equip'}</div>
+        ${available.length
+          ? `<div class="lib-cards" id="vm-available"${full ? ' style="opacity:.5;"' : ''}>` + available.map(m => tile(m, false)).join('') + '</div>'
+          : '<div style="opacity:.5; font-size:11px;">All mods equipped.</div>'}
       </div>
     </div>`;
   modal.addEventListener('click', e => { if (e.target === modal) close(); });
   modal.querySelector('#vm-close').onclick = close;
-  modal.querySelectorAll('[data-mod]').forEach(b => b.onclick = () => {
+  const avail = modal.querySelector('#vm-available');
+  if (avail) avail.querySelectorAll('.lib-card').forEach(el => el.onclick = () => {
     if (v.mods.length >= slots) { alert('No free mod slots on this vehicle.'); return; }
-    const mod = findMod(b.dataset.mod);
+    const mod = findMod(el.dataset.id);
     if (mod) v.mods.push({ id: mod.id, name: mod.name, cost: mod.cost || 0, description: mod.description || '' });
     close(); render(); saveState(); openVehicleMods(uid);
   });
-  modal.querySelectorAll('[data-unmod]').forEach(b => b.onclick = () => {
-    v.mods = v.mods.filter(m => m.id !== b.dataset.unmod);
+  const eq = modal.querySelector('#vm-equipped');
+  if (eq) eq.querySelectorAll('.lib-card').forEach(el => el.onclick = () => {
+    v.mods = v.mods.filter(m => m.id !== el.dataset.id);
     close(); render(); saveState(); openVehicleMods(uid);
   });
-  modal.querySelectorAll('[data-card-name]').forEach(b =>
-    b.addEventListener('click', e => { e.stopPropagation(); openCardImage(b.dataset.cardName); }));
   document.getElementById('modal-host').appendChild(modal);
 }
 
@@ -3535,7 +3578,7 @@ function printRoster() {
           }
           setTimeout(go, 2500); // hard fallback
         })();
-      <\/script>
+      ${'<' + '/script>'}
     </body></html>`;
 
   const w = window.open('', '_blank');
