@@ -6,7 +6,10 @@
   "scripts": {
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "node build_locked.mjs",
+    "build:playtest": "CZ_SRC=playtest.src.html CZ_OUT=playtest.html CZ_TITLE='PLAYTEST — Locked' CZ_HEADING='PLAYTEST' node build_locked.mjs",
+    "build:deck": "CZ_SRC=deck.src.html CZ_OUT=deck.html CZ_TITLE='CYBERDECK — Locked' CZ_HEADING='FIXER TERMINAL' node build_locked.mjs"
   },
   "keywords": [],
   "author": "",
@@ -16,6 +19,7 @@
     "@eslint/js": "^10.0.1",
     "eslint": "^10.4.1",
     "eslint-plugin-html": "^8.1.4",
-    "globals": "^17.6.0"
+    "globals": "^17.6.0",
+    "playwright": "^1.60.0"
   }
 }
